@@ -1,0 +1,1 @@
+// components/chat/ChatWindow.tsx
