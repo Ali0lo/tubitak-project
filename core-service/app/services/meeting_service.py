@@ -1,1 +1,113 @@
-""" app/services/meeting_service.py """
+"""Business logic for meeting management."""
+import uuid
+from typing import List, Optional, Tuple
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.exceptions import ForbiddenError, NotFoundError
+from app.models.meeting import (
+    Meeting,
+    MeetingStatus,
+    ParticipantResponseStatus,
+)
+from app.repositories.meeting_repository import MeetingRepository
+from app.schemas.meeting import MeetingCreate, MeetingUpdate
+
+
+class MeetingService:
+    """Orchestrates meeting use cases, enforcing ownership rules."""
+
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+        self.meetings = MeetingRepository(db)
+
+    async def create_meeting(
+        self, user_id: uuid.UUID, payload: MeetingCreate
+    ) -> Meeting:
+        participants = [(p.email, p.name) for p in payload.participants]
+        meeting = await self.meetings.create(
+            user_id=user_id,
+            title=payload.title,
+            description=payload.description,
+            location=payload.location,
+            start_time=payload.start_time,
+            end_time=payload.end_time,
+            participants=participants,
+        )
+        await self.db.commit()
+        return meeting
+
+    async def get_meeting(self, user_id: uuid.UUID, meeting_id: uuid.UUID) -> Meeting:
+        meeting = await self.meetings.get_by_id(meeting_id)
+        if meeting is None:
+            raise NotFoundError("Meeting")
+        self._assert_owner(meeting, user_id)
+        return meeting
+
+    async def list_meetings(
+        self,
+        user_id: uuid.UUID,
+        *,
+        offset: int,
+        limit: int,
+        status: Optional[MeetingStatus] = None,
+        starts_after=None,
+        starts_before=None,
+    ) -> Tuple[List[Meeting], int]:
+        return await self.meetings.list_for_user(
+            user_id,
+            offset=offset,
+            limit=limit,
+            status=status,
+            starts_after=starts_after,
+            starts_before=starts_before,
+        )
+
+    async def update_meeting(
+        self, user_id: uuid.UUID, meeting_id: uuid.UUID, payload: MeetingUpdate
+    ) -> Meeting:
+        meeting = await self.get_meeting(user_id, meeting_id)
+        updated = await self.meetings.update(
+            meeting,
+            title=payload.title,
+            description=payload.description,
+            location=payload.location,
+            start_time=payload.start_time,
+            end_time=payload.end_time,
+            status=payload.status,
+        )
+        await self.db.commit()
+        return updated
+
+    async def cancel_meeting(
+        self, user_id: uuid.UUID, meeting_id: uuid.UUID
+    ) -> Meeting:
+        meeting = await self.get_meeting(user_id, meeting_id)
+        updated = await self.meetings.update(meeting, status=MeetingStatus.CANCELLED)
+        await self.db.commit()
+        return updated
+
+    async def delete_meeting(self, user_id: uuid.UUID, meeting_id: uuid.UUID) -> None:
+        meeting = await self.get_meeting(user_id, meeting_id)
+        await self.meetings.delete(meeting)
+        await self.db.commit()
+
+    async def update_participant_response(
+        self,
+        user_id: uuid.UUID,
+        meeting_id: uuid.UUID,
+        participant_id: uuid.UUID,
+        response_status: ParticipantResponseStatus,
+    ) -> Meeting:
+        meeting = await self.get_meeting(user_id, meeting_id)
+        participant = await self.meetings.get_participant(meeting_id, participant_id)
+        if participant is None:
+            raise NotFoundError("Participant")
+        await self.meetings.update_participant_response(participant, response_status)
+        await self.db.commit()
+        return await self.get_meeting(user_id, meeting_id)
+
+    @staticmethod
+    def _assert_owner(meeting: Meeting, user_id: uuid.UUID) -> None:
+        if meeting.user_id != user_id:
+            raise ForbiddenError("You do not have access to this meeting")

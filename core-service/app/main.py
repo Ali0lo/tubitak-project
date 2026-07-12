@@ -1,1 +1,52 @@
-""" app/main.py """
+"""Core-service FastAPI application entrypoint."""
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.v1.meetings import router as meetings_router
+from app.api.v1.reminders import router as reminders_router
+from app.api.v1.tasks import router as tasks_router
+from app.core.config import get_settings
+from app.middleware.exception_handler import register_exception_handlers
+
+settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Application startup/shutdown hooks."""
+    yield
+
+
+def create_app() -> FastAPI:
+    """Application factory for the core-service."""
+    app = FastAPI(
+        title="Todotak Core Service",
+        description="Manages tasks, meetings, and reminders.",
+        version="1.0.0",
+        lifespan=lifespan,
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    register_exception_handlers(app)
+    app.include_router(tasks_router, prefix="/api/v1")
+    app.include_router(meetings_router, prefix="/api/v1")
+    app.include_router(reminders_router, prefix="/api/v1")
+
+    @app.get("/health", tags=["health"])
+    async def health_check() -> dict[str, str]:
+        return {"status": "ok", "service": settings.SERVICE_NAME}
+
+    return app
+
+
+app = create_app()
