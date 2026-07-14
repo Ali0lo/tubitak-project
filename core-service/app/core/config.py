@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     NOTIFICATION_SERVICE_URL: str = "http://notification-service:8000"
     NOTIFICATION_SERVICE_TIMEOUT_SECONDS: float = 5.0
 
+    # Shared across auth-service, core-service, and notification-service.
+    # Sent as X-Internal-Api-Key when calling notification-service's
+    # internal schedule/cancel endpoints directly (not through the gateway).
+    INTERNAL_SERVICE_API_KEY: str
+
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
     DEFAULT_PAGE_SIZE: int = 20

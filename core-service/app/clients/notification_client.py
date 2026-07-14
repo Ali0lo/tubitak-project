@@ -55,7 +55,11 @@ class NotificationClient:
                 base_url=self.base_url, timeout=self.timeout
             ) as client:
                 response = await client.post(
-                    "/api/v1/notifications/schedule", json=payload
+                    "/api/v1/notifications/schedule",
+                    json=payload,
+                    headers={
+                        "X-Internal-Api-Key": settings.INTERNAL_SERVICE_API_KEY
+                    },
                 )
                 response.raise_for_status()
             return True
@@ -74,7 +78,10 @@ class NotificationClient:
                 base_url=self.base_url, timeout=self.timeout
             ) as client:
                 response = await client.post(
-                    f"/api/v1/notifications/source/core-service/{reminder_id}/cancel"
+                    f"/api/v1/notifications/source/core-service/{reminder_id}/cancel",
+                    headers={
+                        "X-Internal-Api-Key": settings.INTERNAL_SERVICE_API_KEY
+                    },
                 )
                 response.raise_for_status()
             return True

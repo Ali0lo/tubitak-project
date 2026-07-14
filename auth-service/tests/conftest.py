@@ -20,6 +20,7 @@ os.environ.setdefault(
     ),
 )
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-unit-tests-only")
+os.environ.setdefault("INTERNAL_SERVICE_API_KEY", "test-internal-key")
 
 from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402
@@ -70,3 +71,11 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
         yield ac
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def internal_headers() -> dict:
+    from app.config.settings import get_settings
+
+    settings = get_settings()
+    return {"X-Internal-Api-Key": settings.INTERNAL_SERVICE_API_KEY}

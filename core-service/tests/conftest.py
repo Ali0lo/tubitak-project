@@ -22,6 +22,7 @@ os.environ.setdefault(
     ),
 )
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-unit-tests-only")
+os.environ.setdefault("INTERNAL_SERVICE_API_KEY", "test-internal-key")
 
 from app.core.config import get_settings  # noqa: E402
 from app.db.base import Base  # noqa: E402

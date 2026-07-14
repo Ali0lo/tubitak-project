@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Shared across auth-service, core-service, and notification-service.
+    # Guards internal, service-to-service-only endpoints such as the
+    # user lookup notification-service uses to resolve an email address.
+    INTERNAL_SERVICE_API_KEY: str
+
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
 
