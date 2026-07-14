@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-paper text-ink font-sans;
+  }
+  ::selection {
+    @apply bg-amber-tint text-forest-dark;
+  }
+}
+
+@layer components {
+  /* The signature "ledger line" motif: a mono timestamp, a serif
+     title, a hairline rule beneath. Reused across dashboard, tasks,
+     meetings, and calendar so the whole app reads as one kept
+     journal rather than a set of unrelated screens. */
+  .ledger-line {
+    @apply flex items-baseline gap-4 border-b border-paper-line py-3 last:border-b-0;
+  }
+  .ledger-stamp {
+    @apply font-mono text-xs tabular-nums text-ink-faint shrink-0 w-16;
+  }
+  .ledger-title {
+    @apply font-display text-base text-ink;
+  }
+
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
