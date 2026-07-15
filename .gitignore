@@ -1,6 +1,42 @@
-__pycache__/
-*.pyc
+# Environment files (never commit real secrets)
 .env
+.env.local
+.env.*.local
+!.env.example
+!.env.local.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.sqlite3
+
+# Node / frontend
 node_modules/
 .next/
+out/
+*.tsbuildinfo
+npm-debug.log*
+
+# Docker
+*.pid
+
+# Editors / OS
 .DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# Terraform-style local state (if infra ever grows that direction)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# TLS material — never commit real certs
+infra/nginx/certs/

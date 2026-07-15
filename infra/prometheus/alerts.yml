@@ -1,0 +1,29 @@
+groups:
+  - name: todotak-service-health
+    rules:
+      - alert: ServiceDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.instance }} is down"
+          description: "The health check probe for {{ $labels.instance }} has been failing for more than 1 minute."
+
+      - alert: ServiceSlowHealthCheck
+        expr: probe_duration_seconds > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.instance }} health check is slow"
+          description: "The health check for {{ $labels.instance }} has taken longer than 2s for 5 minutes straight."
+
+      - alert: PrometheusTargetMissing
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus target {{ $labels.job }} is missing"
+          description: "{{ $labels.instance }} has not been scraped successfully for 5 minutes."

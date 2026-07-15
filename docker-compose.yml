@@ -1,23 +1,311 @@
+# Base compose file. Secure-by-default: only the gateway, frontend,
+# and nginx publish ports to the host. Everything else (databases,
+# individual backend services, monitoring UIs) is reachable only on
+# the internal docker network from this file alone.
+#
+#   Local development (recommended): `docker compose up`
+#     Compose auto-loads docker-compose.override.yml alongside this
+#     file, which adds convenience host ports for direct access to
+#     each service, Postgres, Redis, Prometheus, and Grafana.
+#
+#   Production: `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`
+#     Passing explicit -f flags means docker-compose.override.yml is
+#     NOT included, so none of those dev-only ports are ever exposed.
+#
+# (Compose merges list fields like `ports` additively across files —
+# there is no way to "remove" a port via an override — which is why
+# the split is structured this way rather than trying to strip ports
+# back out in docker-compose.prod.yml.)
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - todotak-network
+
 services:
+  # ---------------------------------------------------------------------
+  # Data stores
+  # ---------------------------------------------------------------------
   postgres:
-    image: postgres:16
-    container_name: todotak-postgres
-    restart: unless-stopped
+    <<: *service-defaults
+    image: postgres:16-alpine
     environment:
-      POSTGRES_DB: todotak
-      POSTGRES_USER: todotak
-      POSTGRES_PASSWORD: todotak
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-todotak}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todotak}
+      POSTGRES_DB: ${POSTGRES_DB:-todotak}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-todotak}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
-    image: redis:7
-    container_name: todotak-redis
-    restart: unless-stopped
+    <<: *service-defaults
+    image: redis:7-alpine
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - redis_data:/data
+      - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------
+  # Application services
+  # ---------------------------------------------------------------------
+  auth-service:
+    <<: *service-defaults
+    build:
+      context: ./auth-service
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-true}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-todotak}:${POSTGRES_PASSWORD:-todotak}@postgres:5432/${POSTGRES_DB:-todotak}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-30}
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  core-service:
+    <<: *service-defaults
+    build:
+      context: ./core-service
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-true}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-todotak}:${POSTGRES_PASSWORD:-todotak}@postgres:5432/${POSTGRES_DB:-todotak}
+      REDIS_URL: redis://redis:6379/1
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+      NOTIFICATION_SERVICE_URL: http://notification-service:8000
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  ai-service:
+    <<: *service-defaults
+    build:
+      context: ./ai-service
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-true}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-todotak}:${POSTGRES_PASSWORD:-todotak}@postgres:5432/${POSTGRES_DB:-todotak}
+      REDIS_URL: redis://redis:6379/2
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      CORE_SERVICE_URL: http://core-service:8000
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      core-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  notification-service:
+    <<: *service-defaults
+    build:
+      context: ./notification-service
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-true}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-todotak}:${POSTGRES_PASSWORD:-todotak}@postgres:5432/${POSTGRES_DB:-todotak}
+      REDIS_URL: redis://redis:6379/3
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+      AUTH_SERVICE_URL: http://auth-service:8000
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-no-reply@todotak.app}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  notification-worker:
+    <<: *service-defaults
+    build:
+      context: ./notification-service
+    command: ["python", "-m", "app.workers.run"]
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-true}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-todotak}:${POSTGRES_PASSWORD:-todotak}@postgres:5432/${POSTGRES_DB:-todotak}
+      REDIS_URL: redis://redis:6379/3
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      INTERNAL_SERVICE_API_KEY: ${INTERNAL_SERVICE_API_KEY}
+      AUTH_SERVICE_URL: http://auth-service:8000
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-no-reply@todotak.app}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      notification-service:
+        condition: service_started
+
+  gateway:
+    <<: *service-defaults
+    build:
+      context: ./gateway
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-true}
+      AUTH_SERVICE_URL: http://auth-service:8000
+      CORE_SERVICE_URL: http://core-service:8000
+      AI_SERVICE_URL: http://ai-service:8000
+      NOTIFICATION_SERVICE_URL: http://notification-service:8000
+      REDIS_URL: redis://redis:6379/4
+      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
     ports:
-      - "6379:6379"
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      core-service:
+        condition: service_started
+      ai-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------
+  # Frontend
+  # ---------------------------------------------------------------------
+  frontend:
+    <<: *service-defaults
+    build:
+      context: ./frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: /api/gateway
+      NEXT_PUBLIC_GATEWAY_URL: http://gateway:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------
+  # Edge proxy
+  # ---------------------------------------------------------------------
+  nginx:
+    <<: *service-defaults
+    image: nginx:1.27-alpine
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - gateway
+
+  # ---------------------------------------------------------------------
+  # Monitoring
+  # ---------------------------------------------------------------------
+  blackbox-exporter:
+    <<: *service-defaults
+    image: prom/blackbox-exporter:v0.25.0
+    volumes:
+      - ./monitoring/prometheus/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+
+  prometheus:
+    <<: *service-defaults
+    image: prom/prometheus:v2.55.1
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - blackbox-exporter
+
+  grafana:
+    <<: *service-defaults
+    image: grafana/grafana:11.2.2
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./infra/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+networks:
+  todotak-network:
+    driver: bridge
 
 volumes:
   postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

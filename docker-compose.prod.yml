@@ -1,1 +1,133 @@
-# docker-compose.prod.yml
+# Production overrides, purely additive by design (see the note at
+# the top of docker-compose.yml about why: Compose merges list fields
+# like `ports` across files rather than letting an override replace
+# them, so this file only ever adds things — restart policies,
+# resource limits, log rotation, TLS — never tries to remove a port
+# the base file didn't already withhold).
+#
+# Apply with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+x-prod-defaults: &prod-defaults
+  restart: always
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  blackbox-exporter:
+    <<: *prod-defaults
+
+  postgres:
+    <<: *prod-defaults
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+
+  redis:
+    <<: *prod-defaults
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  auth-service:
+    <<: *prod-defaults
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  core-service:
+    <<: *prod-defaults
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  ai-service:
+    <<: *prod-defaults
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  notification-service:
+    <<: *prod-defaults
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  notification-worker:
+    <<: *prod-defaults
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  gateway:
+    <<: *prod-defaults
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  frontend:
+    <<: *prod-defaults
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  nginx:
+    <<: *prod-defaults
+    # NOTE: TLS termination is intentionally not configured here.
+    # infra/nginx/nginx.conf only defines a port-80 HTTP server block.
+    # For production HTTPS, either terminate TLS upstream of this
+    # container (a managed load balancer / Cloudflare / etc. — the
+    # common real-world choice), or extend nginx.conf with an
+    # `listen 443 ssl;` server block plus a certificate (e.g. via
+    # certbot) and add the corresponding port mapping and volume
+    # mount here once that config actually exists.
+
+  prometheus:
+    <<: *prod-defaults
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  grafana:
+    <<: *prod-defaults

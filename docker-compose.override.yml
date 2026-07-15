@@ -1,0 +1,45 @@
+# Auto-loaded by `docker compose up` whenever no explicit -f flags are
+# given (that's the whole mechanism here — see the comment at the top
+# of docker-compose.yml). Adds direct host access to everything for
+# local development and debugging: hit a service's own /docs without
+# going through the gateway, connect a GUI to Postgres, etc.
+#
+# Never referenced in production — `docker compose -f docker-compose.yml
+# -f docker-compose.prod.yml up -d` does not pick this file up.
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  auth-service:
+    ports:
+      - "8001:8000"
+
+  core-service:
+    ports:
+      - "8002:8000"
+
+  ai-service:
+    ports:
+      - "8003:8000"
+
+  notification-service:
+    ports:
+      - "8004:8000"
+
+  blackbox-exporter:
+    ports:
+      - "9115:9115"
+
+  prometheus:
+    ports:
+      - "9090:9090"
+
+  grafana:
+    ports:
+      - "3001:3000"
