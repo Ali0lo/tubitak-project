@@ -1,0 +1,166 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-python:
+    name: Lint Python services
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - auth-service
+          - core-service
+          - gateway
+          - ai-service
+          - notification-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff==0.7.1
+
+      - name: Ruff check
+        run: ruff check ${{ matrix.service }}
+
+      - name: Ruff format check
+        run: ruff format --check ${{ matrix.service }}
+
+  unit-tests-python:
+    name: Dependency-free unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: gateway
+            test_paths: "tests/"
+          - service: ai-service
+            test_paths: "tests/test_tool_definitions.py tests/test_core_service_client.py tests/test_tool_executor.py"
+          - service: notification-service
+            test_paths: "tests/test_redis_queue.py tests/test_email_templates.py tests/test_auth_service_client.py tests/test_email_client.py"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ${{ matrix.service }}/requirements.txt
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.service }}
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        working-directory: ${{ matrix.service }}
+        run: pytest ${{ matrix.test_paths }} -v
+
+  frontend:
+    name: Frontend typecheck, lint, and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Unit tests
+        working-directory: frontend
+        run: npm test
+
+  contract-tests:
+    name: Cross-service contract tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies for every service under test
+        run: |
+          pip install -r core-service/requirements.txt
+          pip install -r notification-service/requirements.txt
+          pip install -r ai-service/requirements.txt
+
+      - name: Run contract tests
+        working-directory: tests/contracts
+        env:
+          DATABASE_URL: "postgresql+asyncpg://user:pass@localhost:5432/unused"
+          JWT_SECRET_KEY: "ci-test-secret"
+          INTERNAL_SERVICE_API_KEY: "ci-test-internal-key"
+          OPENAI_API_KEY: "sk-ci-test-not-real"
+        run: pytest -v
+
+  security-scan:
+    name: Security scan (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install bandit
+        run: pip install bandit==1.9.4
+
+      - name: Run bandit across all Python services
+        run: |
+          bandit -r auth-service/app core-service/app gateway/app ai-service/app notification-service/app
+
+      - name: Run auth-enforcement sweep
+        env:
+          DATABASE_URL: "postgresql+asyncpg://user:pass@localhost:5432/unused"
+          JWT_SECRET_KEY: "ci-test-secret"
+          INTERNAL_SERVICE_API_KEY: "ci-test-internal-key"
+          OPENAI_API_KEY: "sk-ci-test-not-real"
+        run: |
+          pip install -r core-service/requirements.txt
+          pip install -r ai-service/requirements.txt
+          pip install -r notification-service/requirements.txt
+          pip install -r auth-service/requirements.txt
+          pytest tests/security -v
+
+  compose-validate:
+    name: Validate docker-compose configuration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dummy .env for interpolation
+        run: cp .env.example .env
+
+      - name: Validate dev config
+        run: docker compose config --quiet
+
+      - name: Validate prod config
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet

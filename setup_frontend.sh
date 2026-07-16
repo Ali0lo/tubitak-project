@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Todotak - frontend full implementation (Next.js 14 App Router)
+# Todotak - frontend full implementation (Next.js 15 App Router)
+# (supersedes the earlier setup_frontend.sh - this one is upgraded
+#  to Next.js 15.5.18 + React 19.2.7 after Next 14.x reached
+#  end-of-security-patches; see tests/security/README.md)
 # Run this from the root of your todotak/ repo:
 #   bash setup_frontend.sh
 set -euo pipefail
@@ -2994,9 +2997,10 @@ echo '==> Writing frontend/next-env.d.ts'
 cat > "frontend/next-env.d.ts" << 'TODOTAK_EOF'
 /// <reference types="next" />
 /// <reference types="next/image-types/global" />
+/// <reference path="./.next/types/routes.d.ts" />
 
 // NOTE: This file should not be edited
-// see https://nextjs.org/docs/app/building-your-application/configuring/typescript for more information.
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
 TODOTAK_EOF
 
 echo '==> Writing frontend/next.config.js'
@@ -3034,9 +3038,9 @@ cat > "frontend/package.json" << 'TODOTAK_EOF'
     "test:watch": "vitest"
   },
   "dependencies": {
-    "next": "14.2.35",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "next": "15.5.18",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "@tanstack/react-query": "5.59.0",
     "zustand": "4.5.5",
     "clsx": "2.1.1",
@@ -3047,13 +3051,13 @@ cat > "frontend/package.json" << 'TODOTAK_EOF'
   "devDependencies": {
     "typescript": "5.6.2",
     "@types/node": "20.16.10",
-    "@types/react": "18.3.10",
-    "@types/react-dom": "18.3.0",
+    "@types/react": "19.2.3",
+    "@types/react-dom": "19.2.3",
     "tailwindcss": "3.4.13",
-    "postcss": "8.4.47",
+    "postcss": "8.5.19",
     "autoprefixer": "10.4.20",
     "eslint": "8.57.1",
-    "eslint-config-next": "14.2.35",
+    "eslint-config-next": "15.5.18",
     "vitest": "2.1.1",
     "@vitejs/plugin-react": "4.3.1",
     "jsdom": "25.0.1"
@@ -3542,7 +3546,6 @@ TODOTAK_EOF
 echo '==> frontend files written successfully'
 echo 'Next steps:'
 echo '  1. cp frontend/.env.local.example frontend/.env.local'
-echo '     (defaults assume the gateway is on http://localhost:8000)'
 echo '  2. cd frontend && npm install'
 echo '  3. npm run typecheck   (should be clean)'
 echo '  4. npm test            (7 tests, no backend needed)'

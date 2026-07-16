@@ -1,132 +1,102 @@
 # Disaster Recovery
 
-What to do when something is actually broken, not just degraded.
-Pair this with `runbook.md` for day-to-day troubleshooting — this
-doc is for backups, restores, and full-stack rebuilds.
+## What's actually at risk
 
-## What's actually stateful
+- **Postgres** — the only source of truth in this system. Every
+  service's state (users, tasks, meetings, reminders, conversations,
+  notifications) lives here, across four schemas in one database.
+- **Redis** — the notification dispatch queue and rate-limit counters.
+  AOF persistence is enabled (`infra/redis/redis.conf`), so a restart
+  doesn't lose queued notifications, but Redis was never designed as a
+  durable system of record — treat anything in it as reconstructible,
+  not as data to back up.
 
-Only two things hold data that isn't reproducible from source:
+Everything else (application code, container images, configuration) is
+in version control and rebuildable from the repo; it isn't a backup
+concern.
 
-- **`postgres_data`** volume — all application data (users, tasks,
-  meetings, reminders, AI conversation history, notification records)
-  across all 4 schemas.
-- **`redis_data`** volume — persisted via `appendonly yes` in
-  `infra/redis/redis.conf`, holding the gateway's rate-limit counters
-  and notification-service's dispatch queue. Losing this is annoying
-  (queued notifications in flight are lost, rate limits reset) but
-  not catastrophic — nothing here is the source of truth for
-  anything; it can be rebuilt from Postgres state plus a cold start.
+## Recovery targets
 
-Everything else (containers, images, configs) is rebuildable from the
-git repo in minutes. Treat Postgres backups as the only thing that
-actually matters here.
+These aren't SLA commitments, just the honest numbers this setup
+actually supports without further investment:
 
-## Backup: Postgres
+- **RPO (data loss on failure)**: up to 24 hours, if backups run
+  daily via cron and nothing else is in place. Reduce this by running
+  `scripts/backup.sh` more frequently, or by adding Postgres streaming
+  replication / WAL archiving for near-zero RPO (not configured here
+  — see "Scaling this up" below).
+- **RTO (time to restore service)**: roughly 15–30 minutes for a
+  single-host restore — time to provision a host, run
+  `scripts/restore.sh`, and `scripts/deploy.sh`. Longer if the backup
+  file itself needs to be fetched from off-host storage first.
 
-Manual, on-demand backup:
+## Backups
 
 ```bash
-docker compose exec -T postgres pg_dump -U todotak -d todotak --format=custom \
-  > backups/todotak-$(date +%Y%m%d-%H%M%S).dump
+bash scripts/backup.sh                # writes to ./backups/
+bash scripts/backup.sh /mnt/offsite    # or anywhere else
 ```
 
-Scheduled (add to host crontab, not inside a container — you want
-the backup to survive `docker compose down -v`):
+**Set up a cron job** on the production host — nothing in this repo
+schedules backups automatically:
 
 ```cron
-0 3 * * * cd /path/to/todotak && docker compose exec -T postgres pg_dump -U todotak -d todotak --format=custom > /path/to/backups/todotak-$(date +\%Y\%m\%d).dump
+0 3 * * * cd /path/to/todotak && bash scripts/backup.sh /mnt/backups >> /var/log/todotak-backup.log 2>&1
 ```
 
-Copy backups off the host (S3, another server, wherever) — a backup
-that lives on the same disk as the database it's backing up doesn't
-protect you from disk failure.
+Back up `./backups` (or wherever you point it) to storage that isn't
+the same host — S3, another server, anywhere that survives the
+production host dying entirely. A local-disk-only backup doesn't
+protect against the most likely failure (the host itself).
 
-**Retention**: keep at minimum the last 7 daily backups and last 4
-weekly backups. Adjust to your actual RPO tolerance (see below).
-
-## Restore: Postgres
+## Restoring
 
 ```bash
-# Stop everything that writes to the DB first
-docker compose stop auth-service core-service ai-service notification-service notification-worker gateway
-
-docker compose exec -T postgres pg_restore -U todotak -d todotak --clean --if-exists \
-  < backups/todotak-YYYYMMDD-HHMMSS.dump
-
-docker compose start auth-service core-service ai-service notification-service notification-worker gateway
+bash scripts/restore.sh backups/todotak-20260715T030000Z.sql.gz
 ```
 
-If restoring into a brand-new environment (not just an existing
-container), bring up `postgres` alone first, wait for it healthy,
-then restore, then bring up everything else — otherwise the app
-services' automatic `alembic upgrade head` on startup may race with
-your restore.
+This is destructive by design — it drops and recreates all four
+service schemas before loading the dump, and requires typing the
+database name to confirm. Run it against a fresh Postgres instance
+(e.g. right after `docker compose up -d postgres` on a new host, before
+starting any application service) rather than against a database with
+data you might still need.
 
-## Full stack rebuild from scratch
+After restoring, run `bash scripts/migrate.sh` if the backup predates
+migrations that have since been added to the codebase — restoring an
+old dump doesn't retroactively apply new schema changes.
 
-If the host itself is gone (not just a container):
+## Full host loss
 
-1. Provision new host, install Docker + Compose plugin.
-2. Clone the repo, `cp .env.example .env`, fill in the **same**
-   secrets as before if you have them recorded somewhere secure
-   (rotating `JWT_SECRET_KEY`/`INTERNAL_SERVICE_API_KEY` here is fine
-   if the old ones are actually lost — it just logs out all users and
-   nothing else breaks).
-3. `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`
-4. Once `postgres` is healthy, stop the app services, restore the
-   latest Postgres backup (see above), then start them.
-5. Verify: `docker compose ps` all healthy, hit `/health` on each
-   service, log in through the frontend, create a test task.
-6. Point DNS at the new host if the IP changed.
+1. Provision a new host, install Docker + Compose.
+2. Clone the repo, restore `.env` from wherever secrets are actually
+   kept (a password manager / secrets vault — **`.env` itself should
+   never be the backup**, since committing or copying it around
+   defeats the point of having secrets).
+3. `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d postgres redis`
+   — bring up just the data stores first.
+4. `bash scripts/restore.sh <latest backup>`.
+5. `bash scripts/deploy.sh` — brings up everything else and runs
+   migrations (harmless no-op if the restored dump is already current).
+6. `bash scripts/healthcheck.sh <new host>` to confirm.
 
-## Partial failure scenarios
+## Testing this actually works
 
-**Postgres container won't start / data corruption suspected.**
-Don't `rm -rf` the volume as a first move. First try
-`docker compose logs postgres` — most "won't start" issues are
-permission or disk-space related, not corruption. If it really is
-corrupted, restore from the most recent backup into a fresh volume
-rather than attempting in-place repair.
+A backup you've never restored isn't a backup, it's a hope. Periodically:
 
-**A bad migration was deployed and needs undoing.**
-Alembic downgrades are not automatic and not guaranteed to be
-lossless (a migration that drops a column can't un-drop it without
-data loss). Preferred order of operations:
-1. If caught immediately and no meaningful writes happened since:
-   `docker compose exec <service> alembic downgrade -1`, then fix
-   forward.
-2. If data has already been written under the new schema: restore
-   the pre-migration Postgres backup instead of downgrading — it's
-   the only way to guarantee consistency. This is exactly why the
-   production checklist requires a fresh backup immediately before
-   any deploy that includes migrations.
+```bash
+bash scripts/backup.sh /tmp/dr-test
+# on a throwaway host or a second local compose project:
+bash scripts/restore.sh /tmp/dr-test/todotak-<timestamp>.sql.gz
+bash scripts/healthcheck.sh
+```
 
-**Redis is lost entirely (volume deleted, corrupted, whatever).**
-Just start it fresh — `docker compose up -d redis`. Rate limits
-reset (harmless) and any notifications mid-dispatch in the queue are
-lost (re-check `notification-service`'s DB records — undelivered
-ones can be re-enqueued once you write that reconciliation logic;
-not present as of Phase 8, tracked as a known gap).
+## Scaling this up
 
-**One backend service is down but the rest of the stack is fine.**
-The gateway does not currently have per-route circuit breaking — a
-downstream service being down will make its routes fail, not take
-down the gateway itself. Users hitting unrelated features are
-unaffected. `docker compose up -d <service>` to bring it back;
-`depends_on: condition: service_healthy` on downstream containers
-(e.g. ai-service depends on core-service) means anything depending on
-the recovered service will reconnect automatically, no cascading
-restart needed.
-
-## Recovery objectives (fill in for your actual deployment)
-
-- [ ] **RPO (Recovery Point Objective)** — how much data loss is
-      acceptable? Backup frequency above is set for a same-day RPO;
-      tighten it (e.g. WAL archiving / continuous backup) if that's
-      not good enough for your use case.
-- [ ] **RTO (Recovery Time Objective)** — how long can the app be
-      down? A full rebuild-from-scratch as documented above takes
-      roughly: provisioning (varies) + `docker compose up -d --build`
-      (~5-10 min for images to build) + restore (varies with DB size).
-      Time an actual drill rather than assuming.
+This setup is right-sized for a single-host deployment. If/when that
+stops being enough, the natural next steps — none implemented here —
+are: managed Postgres with automated point-in-time recovery instead of
+cron+pg_dump, Redis with persistence on a managed service instead of a
+container volume, and multi-host orchestration (the docker-compose
+files would need to become Kubernetes manifests or similar at that
+point).

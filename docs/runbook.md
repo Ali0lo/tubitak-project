@@ -1,169 +1,133 @@
-# Operations Runbook
+# Runbook
 
-Day-to-day operational commands and troubleshooting for the Todotak
-stack. Assumes you're on the host running Docker Compose, in the repo
-root, with `.env` already populated.
+Common operational scenarios and how to handle them.
 
-## Service map
+## A service is down
 
-| Service               | Container name              | Internal port | Host port (dev) | Depends on                          |
-|------------------------|------------------------------|:---:|:---:|--------------------------------------|
-| postgres                | todotak-postgres             | 5432 | 5432 | —                                    |
-| redis                   | todotak-redis                | 6379 | 6379 | —                                    |
-| auth-service             | todotak-auth-service          | 8000 | 8001 | postgres, redis                      |
-| core-service             | todotak-core-service          | 8000 | 8002 | postgres, redis, auth-service        |
-| ai-service               | todotak-ai-service            | 8000 | 8003 | postgres, redis, core-service        |
-| notification-service     | todotak-notification-service  | 8000 | 8004 | postgres, redis, auth-service        |
-| notification-worker      | todotak-notification-worker   | —    | —    | notification-service                 |
-| gateway                  | todotak-gateway               | 8000 | 8000 | redis + all 4 backend services       |
-| frontend                 | todotak-frontend              | 3000 | 3000 | gateway                              |
-| nginx (prod only)        | todotak-nginx                 | 80/443 | 80/443 | gateway, frontend                  |
+1. Check the dashboard: Grafana → "Todotak - Service Health", or
+   `curl http://<host>:8000/health/services` for an immediate answer.
+2. `docker compose ps` — is the container running at all, or has it
+   exited/is it restarting in a loop?
+3. `docker compose logs -f <service>` — look for the actual error.
+   Common causes:
+   - **Can't reach Postgres**: check `docker compose ps postgres` is
+     healthy; check `DATABASE_URL` in `.env` matches
+     `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB`.
+   - **Can't reach Redis**: same idea, check `REDIS_URL`.
+   - **Missing/wrong env var**: every service's Settings() is a
+     required-field Pydantic model — a missing required var crashes
+     the process immediately on startup with a clear error naming the
+     field.
+4. `docker compose restart <service>` if the underlying issue (e.g. a
+   transient DB connection blip) has since resolved.
 
-Redis is one instance, split by DB index: `0` auth/core, `1` gateway
-(rate limiting), `2` ai-service, `3` notification-service (dispatch
-queue). If you ever need to inspect one service's keys without
-seeing another's, `redis-cli -n <index>`.
+## auth-service or core-service is up, but every request 401s
 
-## Starting / stopping
+Almost always a `JWT_SECRET_KEY` mismatch — it must be byte-identical
+across auth-service, core-service, ai-service, and
+notification-service. Check all four `.env` values (or, in Docker, the
+single root `.env` that feeds all of them via `docker-compose.yml`
+interpolation — if you're running any service standalone outside
+Docker with its own `.env`, that's the usual drift point).
 
-```bash
-# Local dev
-docker compose up -d --build
-docker compose down                 # stop, keep volumes
-docker compose down -v              # stop, WIPE postgres/redis data
+## Internal service-to-service calls are failing with 401
 
-# Production (Nginx + hardened config)
-make up-prod
-make down-prod
-```
+Same idea, but for `INTERNAL_SERVICE_API_KEY` — must match across
+auth-service, core-service, and notification-service. Check
+`docker compose logs core-service` for
+`"Failed to schedule notification"` warnings, or
+`docker compose logs notification-service` for 401s on `/schedule` or
+`/cancel`.
 
-## Checking status
+## Reminders aren't sending emails
 
-```bash
-docker compose ps                   # look for "healthy", not just "Up"
-docker compose logs -f gateway      # tail one service
-docker compose logs -f              # tail everything (noisy)
-```
+1. Confirm the notification actually got created:
+   `GET /api/v1/notifications` (as the affected user) or query the
+   `notification.notifications` table directly.
+2. Check its `status`. `pending` means it isn't due yet. `queued`
+   means the scheduler claimed it but the dispatch worker hasn't
+   picked it up — check `docker compose logs notification-worker` is
+   actually running (it's a **separate process** from the
+   notification-service API; a healthy API container doesn't imply
+   the worker is up).
+3. `failed` — check `failure_reason` on the row, and
+   `docker compose logs notification-worker` for the SMTP error.
+   Common causes: wrong `SMTP_HOST`/`PORT`, provider rejecting the
+   `SMTP_FROM_EMAIL` domain (needs SPF/DKIM set up in most cases),
+   auth failure.
+4. Check the user's notification preference
+   (`GET /api/v1/notifications/preferences`) — if `email_enabled` is
+   `false`, that's expected behavior, not a bug: the row still gets
+   marked `sent` (it's visible in-app) but no email goes out.
+5. If notification-service can't resolve the user's email at all
+   (auth-service internal lookup failing), the notification is still
+   marked `sent` — check notification-worker logs for
+   `"No email on file for user ..."` to confirm that's what happened.
 
-The **notification-worker** has no `HEALTHCHECK` (it's a background
-loop, not an HTTP server), so `docker compose ps` will just show
-"Up", never "healthy". Confirm it's actually doing something with:
+## The dispatch queue seems backed up
 
-```bash
-docker compose logs -f notification-worker
-```
-
-You should see periodic scheduler/dispatch loop log lines at the
-interval set by `SCHEDULER_POLL_INTERVAL_SECONDS` (default 15s). If
-the logs go silent, restart it: `docker compose restart notification-worker`.
-
-## Health endpoints
-
-Every FastAPI service exposes `GET /health`:
-
-```bash
-curl http://localhost:8000/health   # gateway
-curl http://localhost:8001/health   # auth-service
-curl http://localhost:8002/health   # core-service
-curl http://localhost:8003/health   # ai-service
-curl http://localhost:8004/health   # notification-service
-```
-
-Expected response: `{"status": "ok", "service": "<name>"}`.
-
-## Running migrations manually
-
-Normally each service runs `alembic upgrade head` automatically on
-container start (baked into `docker-compose.yml`'s `command:`). To
-run one manually, e.g. after pulling new migration files without a
-full restart:
+Redis' `notifications:dispatch_queue` list length is the queue depth:
 
 ```bash
-docker compose exec auth-service alembic upgrade head
-docker compose exec core-service alembic upgrade head
-docker compose exec ai-service alembic upgrade head
-docker compose exec notification-service alembic upgrade head
+docker compose exec redis redis-cli -n 3 LLEN notifications:dispatch_queue
 ```
 
-Or all at once: `make migrate`.
+A growing number means the dispatch worker can't keep up — usually a
+slow or rate-limiting SMTP provider. Check `notification-worker` logs
+for repeated SMTP timeouts. Restarting the worker doesn't lose queued
+work (Redis AOF persistence, see `infra/redis/redis.conf`), so it's
+safe to restart if it looks stuck.
 
-To see current migration state vs. what's available:
+## AI chat is failing / OpenAI errors
+
+- `502` from `/api/v1/ai/chat` with a generic "assistant is
+  temporarily unavailable" message means the OpenAI API call itself
+  failed — check `OPENAI_API_KEY` is valid and has quota, and check
+  `docker compose logs ai-service` for the underlying
+  `APIError`/`APITimeoutError`.
+- If the assistant keeps saying it "couldn't complete this request",
+  check `ai.tool_call_logs` for the specific tool and error — most
+  often this is core-service rejecting a tool call (e.g. trying to
+  link a reminder to a task that doesn't exist).
+
+## Rate limiting is too aggressive / not aggressive enough
+
+Gateway rate limits: `RATE_LIMIT_REQUESTS` / `RATE_LIMIT_WINDOW_SECONDS`
+in `.env`. Takes effect on restart (`docker compose restart gateway`).
+If Redis is unreachable, the gateway fails **open** (allows all
+traffic) rather than blocking everything — check
+`docker compose logs gateway` if you suspect rate limiting silently
+isn't working.
+
+## Database migration failed partway through
+
+Alembic migrations for each service run independently
+(`scripts/migrate.sh` loops over all four). If one fails:
+
+1. `docker compose exec <service> alembic current` — see what
+   revision it's actually on.
+2. `docker compose logs <service>` at the time of the failed
+   migration for the actual SQL error.
+3. Fix forward (write a new migration) rather than editing an already-
+   applied migration file — the same file that has run against
+   production should never change.
+
+## Someone needs to be locked out immediately (compromised account)
+
+There's no admin "disable user" endpoint yet. Fastest path today:
 
 ```bash
-docker compose exec auth-service alembic current
-docker compose exec auth-service alembic history
+docker compose exec postgres psql -U todotak -d todotak -c \
+  "UPDATE auth.users SET is_active = false WHERE email = 'user@example.com';"
 ```
 
-## Common issues
-
-**A service is unhealthy / restarting in a loop.**
-Check its logs first — almost always either (a) it can't reach
-Postgres/Redis yet (shouldn't happen given the `depends_on:
-condition: service_healthy` ordering, but check `docker compose ps`
-for postgres/redis health if it does), or (b) a migration failed.
-`docker compose logs <service>` will show the Alembic traceback if
-it's (b).
-
-**401s on every request through the gateway, even with a valid-looking token.**
-`JWT_SECRET_KEY` is not identical across auth-service and whichever
-service is rejecting the token. Check `.env` was actually reloaded
-(`docker compose up -d --build <service>` after any `.env` edit —
-Compose does not hot-reload environment variables into running
-containers).
-
-**core-service can't reach notification-service (task reminders silently not scheduled).**
-This fails soft by design (see `core-service/app/clients/notification_client.py`
-— a notification failure never blocks the task/reminder write), so
-you won't get an error in the UI. Check
-`docker compose logs core-service | grep -i notification` for the
-warning, and confirm `INTERNAL_SERVICE_API_KEY` matches between
-core-service and notification-service.
-
-**"relation does not exist" errors after a fresh `docker compose up`.**
-Migrations haven't run yet, or ran against the wrong schema. Confirm
-`infra/postgres/init.sql` ran (only fires on a *first-ever* volume
-init — if you've run this stack before, the `postgres_data` volume
-already exists and init scripts are skipped). Check schemas exist:
+This alone doesn't revoke already-issued access tokens (they're
+stateless JWTs, valid until they expire — 15 minutes by default). To
+force immediate logout, also revoke their refresh tokens so they can't
+get a new access token once the current one expires:
 
 ```bash
-docker compose exec postgres psql -U todotak -d todotak -c '\dn'
+docker compose exec postgres psql -U todotak -d todotak -c \
+  "UPDATE auth.refresh_tokens SET revoked = true WHERE user_id = \
+   (SELECT id FROM auth.users WHERE email = 'user@example.com');"
 ```
-
-Expect `auth`, `core`, `ai`, `notification`.
-
-**Frontend loads but every API call 404s or CORS-errors.**
-Check `NEXT_PUBLIC_GATEWAY_URL` inside the frontend container matches
-where the gateway actually is (`http://gateway:8000` in Docker, not
-`http://localhost:8000` — from inside a container, `localhost` is the
-container itself). And check `CORS_ORIGINS` on the gateway includes
-the exact origin the frontend is served from.
-
-## Rotating secrets
-
-1. Generate new value(s).
-2. Update `.env` on the host.
-3. Recreate every container that reads the changed variable (not just
-   restart — Compose only re-reads `.env` on `up`):
-   ```bash
-   docker compose up -d
-   ```
-4. If `JWT_SECRET_KEY` was rotated: every previously issued access/
-   refresh token is now invalid. All users get logged out. Communicate
-   this before rotating in production, don't discover it after.
-
-## Scaling a service
-
-Stateless services (gateway, core-service, ai-service — anything
-without its own background worker) can run multiple replicas behind
-Nginx:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml \
-  up -d --scale core-service=3
-```
-
-Don't scale `notification-worker` beyond 1 replica without first
-checking `app/workers/scheduler_worker.py` and `dispatch_worker.py`
-for how they claim work from the Redis queue — if they're not
-built to coordinate over multiple instances, scaling it will cause
-duplicate notification sends.

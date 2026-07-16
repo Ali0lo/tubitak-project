@@ -47,7 +47,7 @@ prod-logs: ## Tail logs for the production stack
 ## --- Database ----------------------------------------------------------------
 
 migrate: ## Run Alembic migrations for every service that owns a schema
-	bash infra/docker/run-migrations.sh
+	bash scripts/migrate.sh
 
 migrate-status: ## Show current Alembic revision for every service
 	@for service in auth-service core-service ai-service notification-service; do \

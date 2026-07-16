@@ -5,6 +5,18 @@
 # resource limits, log rotation, TLS — never tries to remove a port
 # the base file didn't already withhold).
 #
+# Also adds `image:` tags for every service .github/workflows/cd.yml
+# publishes to GHCR, matching GHCR_REPOSITORY + IMAGE_TAG below. This
+# is what makes `docker compose pull` in scripts/deploy.sh meaningful
+# — without it, compose has no pre-built image to pull and always
+# rebuilds from source locally, silently ignoring whatever CD just
+# published. Set GHCR_REPOSITORY to your actual
+# ghcr.io/<owner>/<repo> and IMAGE_TAG to a commit SHA or `latest`
+# before deploying; both default to values that keep this file usable
+# even if you haven't set up CD yet (compose falls back to building
+# from the `build:` context in the base file when the image can't be
+# pulled).
+#
 # Apply with:
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
@@ -38,6 +50,7 @@ services:
 
   auth-service:
     <<: *prod-defaults
+    image: ${GHCR_REPOSITORY:-ghcr.io/example/todotak}/auth-service:${IMAGE_TAG:-latest}
     environment:
       ENVIRONMENT: production
       DEBUG: "false"
@@ -49,6 +62,7 @@ services:
 
   core-service:
     <<: *prod-defaults
+    image: ${GHCR_REPOSITORY:-ghcr.io/example/todotak}/core-service:${IMAGE_TAG:-latest}
     environment:
       ENVIRONMENT: production
       DEBUG: "false"
@@ -60,6 +74,7 @@ services:
 
   ai-service:
     <<: *prod-defaults
+    image: ${GHCR_REPOSITORY:-ghcr.io/example/todotak}/ai-service:${IMAGE_TAG:-latest}
     environment:
       ENVIRONMENT: production
       DEBUG: "false"
@@ -71,6 +86,7 @@ services:
 
   notification-service:
     <<: *prod-defaults
+    image: ${GHCR_REPOSITORY:-ghcr.io/example/todotak}/notification-service:${IMAGE_TAG:-latest}
     environment:
       ENVIRONMENT: production
       DEBUG: "false"
@@ -82,6 +98,7 @@ services:
 
   notification-worker:
     <<: *prod-defaults
+    image: ${GHCR_REPOSITORY:-ghcr.io/example/todotak}/notification-service:${IMAGE_TAG:-latest}
     environment:
       ENVIRONMENT: production
       DEBUG: "false"
@@ -93,6 +110,7 @@ services:
 
   gateway:
     <<: *prod-defaults
+    image: ${GHCR_REPOSITORY:-ghcr.io/example/todotak}/gateway:${IMAGE_TAG:-latest}
     environment:
       ENVIRONMENT: production
       DEBUG: "false"
@@ -104,6 +122,7 @@ services:
 
   frontend:
     <<: *prod-defaults
+    image: ${GHCR_REPOSITORY:-ghcr.io/example/todotak}/frontend:${IMAGE_TAG:-latest}
     deploy:
       resources:
         limits:
