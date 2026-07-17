@@ -40,3 +40,5 @@ npm-debug.log*
 
 # TLS material — never commit real certs
 infra/nginx/certs/
+setup_*.sh
+patch_*.sh
