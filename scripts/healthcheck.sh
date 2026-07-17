@@ -10,25 +10,40 @@
 # check a deployed environment reachable only via the gateway/nginx —
 # in that case only the gateway's own /health and the frontend are
 # checkable from outside the docker network.
+#
+# NOTE: uses parallel indexed arrays rather than an associative array
+# (`declare -A`) deliberately — associative arrays require bash 4+,
+# and macOS ships bash 3.2 by default, where they fail outright.
 set -uo pipefail
 
 HOST="${1:-localhost}"
 
-declare -A SERVICES=(
-  ["auth-service"]="http://${HOST}:8001/health"
-  ["core-service"]="http://${HOST}:8002/health"
-  ["ai-service"]="http://${HOST}:8003/health"
-  ["notification-service"]="http://${HOST}:8004/health"
-  ["gateway"]="http://${HOST}:8000/health"
-  ["gateway-aggregated"]="http://${HOST}:8000/health/services"
-  ["frontend"]="http://${HOST}:3000/"
+NAMES=(
+  "auth-service"
+  "core-service"
+  "ai-service"
+  "notification-service"
+  "gateway"
+  "gateway-aggregated"
+  "frontend"
+)
+URLS=(
+  "http://${HOST}:8001/health"
+  "http://${HOST}:8002/health"
+  "http://${HOST}:8003/health"
+  "http://${HOST}:8004/health"
+  "http://${HOST}:8000/health"
+  "http://${HOST}:8000/health/services"
+  "http://${HOST}:3000/"
 )
 
 FAILED=0
 
-for name in "${!SERVICES[@]}"; do
-  url="${SERVICES[$name]}"
-  status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$url" || echo "000")
+for i in "${!NAMES[@]}"; do
+  name="${NAMES[$i]}"
+  url="${URLS[$i]}"
+  status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$url" 2>/dev/null)
+  status="${status:-000}"
   if [ "$status" = "200" ]; then
     printf "  \033[32mOK\033[0m    %-24s %s\n" "$name" "$url"
   else
