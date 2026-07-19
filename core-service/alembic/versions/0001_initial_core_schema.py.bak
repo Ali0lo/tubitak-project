@@ -44,6 +44,11 @@ participant_response_status_enum = postgresql.ENUM(
 def upgrade() -> None:
     op.execute("CREATE SCHEMA IF NOT EXISTS core")
 
+    bind = op.get_bind()
+    task_status_enum.create(bind, checkfirst=True)
+    task_priority_enum.create(bind, checkfirst=True)
+    meeting_status_enum.create(bind, checkfirst=True)
+    participant_response_status_enum.create(bind, checkfirst=True)
 
     op.create_table(
         "tasks",
