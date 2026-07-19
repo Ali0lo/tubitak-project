@@ -28,9 +28,6 @@ tool_call_status_enum = postgresql.ENUM(
 def upgrade() -> None:
     op.execute("CREATE SCHEMA IF NOT EXISTS ai")
 
-    bind = op.get_bind()
-    message_role_enum.create(bind, checkfirst=True)
-    tool_call_status_enum.create(bind, checkfirst=True)
 
     op.create_table(
         "conversations",
