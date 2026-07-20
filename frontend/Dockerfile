@@ -8,6 +8,10 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 FROM base AS builder
+ARG NEXT_PUBLIC_GATEWAY_URL=http://gateway:8000
+ARG NEXT_PUBLIC_API_BASE_URL=/api/gateway
+ENV NEXT_PUBLIC_GATEWAY_URL=$NEXT_PUBLIC_GATEWAY_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
