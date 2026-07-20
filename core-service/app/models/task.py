@@ -45,16 +45,26 @@ class Task(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[TaskStatus] = mapped_column(
-        SAEnum(TaskStatus, name="task_status", schema="core"),
-        default=TaskStatus.PENDING,
-        nullable=False,
-        index=True,
-    )
+    SAEnum(
+        TaskStatus,
+        name="task_status",
+        schema="core",
+        values_callable=lambda enum: [e.value for e in enum],
+    ),
+    default=TaskStatus.PENDING,
+    nullable=False,
+    index=True,
+)
     priority: Mapped[TaskPriority] = mapped_column(
-        SAEnum(TaskPriority, name="task_priority", schema="core"),
-        default=TaskPriority.MEDIUM,
-        nullable=False,
-    )
+    SAEnum(
+        TaskPriority,
+        name="task_priority",
+        schema="core",
+        values_callable=lambda enum: [e.value for e in enum],
+    ),
+    default=TaskPriority.MEDIUM,
+    nullable=False,
+)
     due_date: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
