@@ -1,0 +1,7 @@
+Welcome to Todotak!
+
+Please verify your email:
+
+{{ verification_url }}
+
+This link expires in 24 hours.
