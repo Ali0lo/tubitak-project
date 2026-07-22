@@ -45,9 +45,14 @@ class Message(Base):
         index=True,
     )
     role: Mapped[MessageRole] = mapped_column(
-        SAEnum(MessageRole, name="message_role", schema="ai"),
-        nullable=False,
-    )
+    SAEnum(
+        MessageRole,
+        name="message_role",
+        schema="ai",
+        values_callable=lambda enum_cls: [e.value for e in enum_cls],
+    ),
+    nullable=False,
+)
     content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     tool_calls: Mapped[Optional[List[dict]]] = mapped_column(
         JSONB, nullable=True

@@ -51,11 +51,16 @@ class Meeting(Base):
         DateTime(timezone=True), nullable=False
     )
     status: Mapped[MeetingStatus] = mapped_column(
-        SAEnum(MeetingStatus, name="meeting_status", schema="core"),
-        default=MeetingStatus.SCHEDULED,
-        nullable=False,
-        index=True,
-    )
+    SAEnum(
+        MeetingStatus,
+        name="meeting_status",
+        schema="core",
+        values_callable=lambda enum_cls: [e.value for e in enum_cls],
+    ),
+    default=MeetingStatus.SCHEDULED,
+    nullable=False,
+    index=True,
+)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
@@ -95,14 +100,15 @@ class MeetingParticipant(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     response_status: Mapped[ParticipantResponseStatus] = mapped_column(
-        SAEnum(
-            ParticipantResponseStatus,
-            name="participant_response_status",
-            schema="core",
-        ),
-        default=ParticipantResponseStatus.PENDING,
-        nullable=False,
-    )
+    SAEnum(
+        ParticipantResponseStatus,
+        name="participant_response_status",
+        schema="core",
+        values_callable=lambda enum_cls: [e.value for e in enum_cls],
+    ),
+    default=ParticipantResponseStatus.PENDING,
+    nullable=False,
+)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
