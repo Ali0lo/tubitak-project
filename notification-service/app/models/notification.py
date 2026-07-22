@@ -54,11 +54,16 @@ class Notification(Base):
         DateTime(timezone=True), nullable=False, index=True
     )
     status: Mapped[NotificationStatus] = mapped_column(
-        SAEnum(NotificationStatus, name="notification_status", schema="notification"),
-        default=NotificationStatus.PENDING,
-        nullable=False,
-        index=True,
-    )
+    SAEnum(
+        NotificationStatus,
+        name="notification_status",
+        schema="notification",
+        values_callable=lambda enum_cls: [e.value for e in enum_cls],
+    ),
+    default=NotificationStatus.PENDING,
+    nullable=False,
+    index=True,
+)
     sent_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

@@ -40,9 +40,14 @@ class ToolCallLog(Base):
     arguments: Mapped[dict] = mapped_column(JSONB, nullable=False)
     result: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     status: Mapped[ToolCallStatus] = mapped_column(
-        SAEnum(ToolCallStatus, name="tool_call_status", schema="ai"),
-        nullable=False,
-    )
+    SAEnum(
+        ToolCallStatus,
+        name="tool_call_status",
+        schema="ai",
+        values_callable=lambda enum_cls: [e.value for e in enum_cls],
+    ),
+    nullable=False,
+)
     error_message: Mapped[Optional[str]] = mapped_column(
         String(1024), nullable=True
     )
