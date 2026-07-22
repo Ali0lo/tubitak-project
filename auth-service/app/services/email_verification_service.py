@@ -1,58 +1,91 @@
-import hashlib
-import secrets
+"""Business logic for email verification."""
+
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
 
-from app.models.email_verification_token import EmailVerificationToken
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.user import User
+from app.repositories.email_verification_repository import (
+    EmailVerificationRepository,
+)
+from app.utils.token import TokenUtils
 
 
 class EmailVerificationService:
+    """Handles creation and verification of email verification tokens."""
 
-    TOKEN_EXPIRATION_HOURS = 24
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.repository = EmailVerificationRepository(db)
 
-    @staticmethod
-    def generate_token() -> tuple[str, str]:
-
-        token = secrets.token_urlsafe(48)
-
-        token_hash = hashlib.sha256(
-            token.encode()
-        ).hexdigest()
-
-        return token, token_hash
-
-    @staticmethod
-    def expiration():
-
-        return datetime.now(
-            timezone.utc
-        ) + timedelta(hours=24)
-
-    @staticmethod
-    def hash_token(token: str):
-
-        return hashlib.sha256(
-            token.encode()
-        ).hexdigest()
-
-    async def build_token(
+    async def create_verification_token(
         self,
-        user_id,
-    ):
+        user: User,
+    ) -> str:
+        """
+        Create a new verification token for a user.
 
-        token, token_hash = self.generate_token()
+        Returns:
+            Plain-text token (to send via email).
+        """
 
-        db_token = EmailVerificationToken(
-            user_id=user_id,
+        # Remove any previous verification tokens
+        await self.repository.delete_for_user(user.id)
+
+        token, token_hash = TokenUtils.generate_token_pair()
+
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+
+        await self.repository.create(
+            user_id=user.id,
             token_hash=token_hash,
-            expires_at=self.expiration(),
+            expires_at=expires_at,
         )
 
-        return token, db_token
+        await self.db.commit()
 
-    @staticmethod
-    def is_expired(db_token):
+        return token
 
-        return (
-            db_token.expires_at
-            < datetime.now(timezone.utc)
-        )
+    async def verify_email(
+        self,
+        token: str,
+    ) -> User:
+        """
+        Verify a user's email using the received token.
+
+        Raises:
+            ValueError if token is invalid or expired.
+        """
+
+        token_hash = TokenUtils.hash_token(token)
+
+        verification = await self.repository.get_valid_token(token_hash)
+
+        if verification is None:
+            raise ValueError("Invalid or expired verification token.")
+
+        user = verification.user
+
+        if user.is_verified:
+            return user
+
+        user.is_verified = True
+
+        await self.repository.mark_used(verification)
+        await self.repository.delete_for_user(user.id)
+
+        await self.db.commit()
+        await self.db.refresh(user)
+
+        return user
+
+    async def resend_verification(
+        self,
+        user: User,
+    ) -> str:
+        """
+        Generate a brand-new verification token.
+        """
+        return await self.create_verification_token(user)
