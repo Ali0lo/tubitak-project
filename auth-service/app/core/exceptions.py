@@ -15,10 +15,12 @@ class AuthServiceError(Exception):
 
 
 class InvalidCredentialsError(AuthServiceError):
-    """Raised when email/password do not match an active account."""
+    """Raised when email/password do not match an active account,
+    or when login is blocked for another credential-related reason
+    (e.g. unverified email)."""
 
-    def __init__(self) -> None:
-        super().__init__("Invalid email or password", status_code=401)
+    def __init__(self, message: str = "Invalid email or password") -> None:
+        super().__init__(message, status_code=401)
 
 
 class UserAlreadyExistsError(AuthServiceError):

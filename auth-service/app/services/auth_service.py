@@ -80,7 +80,9 @@ class AuthService:
         if not user.is_active:
             raise InvalidCredentialsError()
         if not user.is_verified:
-            raise InvalidCredentialsError()
+            raise InvalidCredentialsError(
+                "Please verify your email before logging in."
+            )
         tokens = await self._issue_tokens(user, device_info=device_info)
         await self.db.commit()
         return tokens
