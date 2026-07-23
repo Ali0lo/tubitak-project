@@ -17,6 +17,7 @@ from app.repositories.token_repository import TokenRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.token import TokenResponse
 from app.schemas.user import UserCreate
+from app.utils.email import send_password_reset_email, send_verification_email
 from app.utils.security import (
     TokenError,
     create_access_token,
@@ -66,12 +67,10 @@ class AuthService:
 
         await self.db.commit()
 
-        # TODO:
-        # Publish event for notification-service
-        # to send verification email.
+        await send_verification_email(to=user.email, raw_token=raw_token)
 
         return user
-    
+
     async def login(
         self, email: str, password: str, device_info: Optional[str] = None
     ) -> TokenResponse:
@@ -148,9 +147,8 @@ class AuthService:
             expires_at=expires_at,
         )
         await self.db.commit()
-        # NOTE: dispatching the raw_token to the user's email is the
-        # responsibility of notification-service, triggered via an event
-        # published after commit (see notification-service integration).
+
+        await send_password_reset_email(to=user.email, raw_token=raw_token)
 
     async def confirm_password_reset(self, token: str, new_password: str) -> None:
         token_hash = hash_token(token)
@@ -171,8 +169,7 @@ class AuthService:
         await self.tokens.revoke_all_for_user(user.id)
         await self.db.commit()
 
-
-        async def verify_email(self, token: str) -> None:
+    async def verify_email(self, token: str) -> None:
         token_hash = hash_token(token)
 
         verification = (
@@ -205,7 +202,7 @@ class AuthService:
 
         await self.db.commit()
 
-        async def resend_verification_email(self, email: str) -> None:
+    async def resend_verification_email(self, email: str) -> None:
         user = await self.users.get_by_email(email)
 
         if user is None:
@@ -228,9 +225,7 @@ class AuthService:
 
         await self.db.commit()
 
-        # TODO:
-        # Publish event for notification-service to send
-        # verification email containing raw_token.
+        await send_verification_email(to=user.email, raw_token=raw_token)
 
     async def get_current_user(self, access_token: str) -> User:
         try:
