@@ -40,17 +40,38 @@ class AuthService:
 
     async def register(self, payload: UserCreate) -> User:
         existing = await self.users.get_by_email(payload.email)
+
         if existing is not None:
             raise UserAlreadyExistsError()
+
         hashed = hash_password(payload.password)
+
         user = await self.users.create(
             email=payload.email,
             hashed_password=hashed,
             full_name=payload.full_name,
         )
-        await self.db.commit()
-        return user
 
+        raw_token = str(uuid.uuid4())
+
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            hours=24
+        )
+
+        await self.tokens.create_email_verification_token(
+            user_id=user.id,
+            token_hash=hash_token(raw_token),
+            expires_at=expires_at,
+        )
+
+        await self.db.commit()
+
+        # TODO:
+        # Publish event for notification-service
+        # to send verification email.
+
+        return user
+    
     async def login(
         self, email: str, password: str, device_info: Optional[str] = None
     ) -> TokenResponse:
@@ -59,6 +80,10 @@ class AuthService:
             raise InvalidCredentialsError()
         if not user.is_active:
             raise InvalidCredentialsError()
+        if not user.is_verified:
+            raise InvalidCredentialsError(
+                "Please verify your email before logging in."
+            )
         tokens = await self._issue_tokens(user, device_info=device_info)
         await self.db.commit()
         return tokens
@@ -145,6 +170,67 @@ class AuthService:
         await self.tokens.mark_password_reset_used(stored)
         await self.tokens.revoke_all_for_user(user.id)
         await self.db.commit()
+
+
+        async def verify_email(self, token: str) -> None:
+        token_hash = hash_token(token)
+
+        verification = (
+            await self.tokens.get_email_verification_token_by_hash(
+                token_hash
+            )
+        )
+
+        if verification is None:
+            raise InvalidTokenError("Invalid verification token")
+
+        if verification.used:
+            raise InvalidTokenError("Verification token already used")
+
+        if verification.expires_at.replace(
+            tzinfo=timezone.utc
+        ) < datetime.now(timezone.utc):
+            raise InvalidTokenError("Verification token expired")
+
+        user = await self.users.get_by_id(verification.user_id)
+
+        if user is None:
+            raise UserNotFoundError()
+
+        user.is_verified = True
+
+        await self.tokens.mark_email_verification_used(
+            verification
+        )
+
+        await self.db.commit()
+
+        async def resend_verification_email(self, email: str) -> None:
+        user = await self.users.get_by_email(email)
+
+        if user is None:
+            return
+
+        if user.is_verified:
+            return
+
+        raw_token = str(uuid.uuid4())
+
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            hours=24
+        )
+
+        await self.tokens.create_email_verification_token(
+            user_id=user.id,
+            token_hash=hash_token(raw_token),
+            expires_at=expires_at,
+        )
+
+        await self.db.commit()
+
+        # TODO:
+        # Publish event for notification-service to send
+        # verification email containing raw_token.
 
     async def get_current_user(self, access_token: str) -> User:
         try:

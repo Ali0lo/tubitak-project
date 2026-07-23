@@ -2,7 +2,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-
+from fastapi import Query
 from app.api.deps import get_auth_service, get_current_user
 from app.config.settings import get_settings
 from app.core.exceptions import AuthServiceError
@@ -73,7 +73,34 @@ async def login(
         ) from exc
     _set_refresh_cookie(response, tokens.refresh_token)
     return tokens
+@router.post("/verify-email", status_code=status.HTTP_200_OK)
+async def verify_email(
+    token: str = Query(...),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> dict[str, str]:
+    try:
+        await auth_service.verify_email(token)
+    except AuthServiceError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=exc.message,
+        ) from exc
 
+    return {
+        "message": "Email verified successfully."
+    }
+
+
+@router.post("/resend-verification", status_code=status.HTTP_200_OK)
+async def resend_verification(
+    email: str,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> dict[str, str]:
+    await auth_service.resend_verification_email(email)
+
+    return {
+        "message": "Verification email sent if the account exists."
+    }
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh(
