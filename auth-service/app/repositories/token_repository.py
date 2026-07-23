@@ -79,7 +79,44 @@ class TokenRepository:
             )
         )
         return result.scalar_one_or_none()
+    # -- Email verification tokens --------------------------------------------
 
+async def create_email_verification_token(
+    self,
+    *,
+    user_id: uuid.UUID,
+    token_hash: str,
+    expires_at: datetime,
+) -> EmailVerificationToken:
+    token = EmailVerificationToken(
+        user_id=user_id,
+        token_hash=token_hash,
+        expires_at=expires_at,
+    )
+    self.db.add(token)
+    await self.db.flush()
+    await self.db.refresh(token)
+    return token
+
+
+async def get_email_verification_token_by_hash(
+    self,
+    token_hash: str,
+) -> Optional[EmailVerificationToken]:
+    result = await self.db.execute(
+        select(EmailVerificationToken).where(
+            EmailVerificationToken.token_hash == token_hash
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def mark_email_verification_used(
+    self,
+    token: EmailVerificationToken,
+) -> None:
+    token.used = True
+    await self.db.flush()
     async def mark_password_reset_used(self, token: PasswordResetToken) -> None:
         token.used = True
         await self.db.flush()

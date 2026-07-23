@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Optional
-
+from app.models.email_verification_token import EmailVerificationToken
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -90,6 +90,7 @@ class EmailVerificationRepository:
         )
 
         for token in result.scalars():
-            await self.db.delete(token)
+            await self.db.delete(token
+                                 )
 
         await self.db.flush()
