@@ -1,6 +1,6 @@
 """Data access layer for the Meeting and MeetingParticipant models."""
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
 from sqlalchemy import func, select
@@ -149,9 +149,6 @@ class MeetingRepository:
             meeting.is_recurring = is_recurring
         if recurrence_rule is not None:
             meeting.recurrence_rule = recurrence_rule
-        await self.db.flush()
-        await self.db.refresh(meeting, attribute_names=["participants"])
-        return meeting
         await self.db.flush()
         await self.db.refresh(meeting, attribute_names=["participants"])
         return meeting

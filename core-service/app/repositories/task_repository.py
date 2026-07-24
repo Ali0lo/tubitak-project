@@ -1,6 +1,6 @@
 """Data access layer for the Task and TaskTag models."""
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
 from sqlalchemy import func, select
@@ -156,9 +156,6 @@ class TaskRepository:
             task.is_recurring = is_recurring
         if recurrence_rule is not None:
             task.recurrence_rule = recurrence_rule
-        await self.db.flush()
-        await self.db.refresh(task, attribute_names=["tags"])
-        return task
         await self.db.flush()
         await self.db.refresh(task, attribute_names=["tags"])
         return task
