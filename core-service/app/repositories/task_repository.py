@@ -36,8 +36,14 @@ class TaskRepository:
         due_before: Optional[datetime] = None,
         due_after: Optional[datetime] = None,
         tag: Optional[str] = None,
+        overdue_only: Optional[bool] = None,
+        today_only: Optional[bool] = None,
+        upcoming_only: Optional[bool] = None,
+        recurring_only: Optional[bool] = None,
+        now: Optional[datetime] = None,
     ) -> Tuple[List[Task], int]:
         stmt = select(Task).where(Task.user_id == user_id)
+        current_time = now or datetime.now(timezone.utc)
 
         if status is not None:
             stmt = stmt.where(Task.status == status)
@@ -51,6 +57,30 @@ class TaskRepository:
             stmt = stmt.join(Task.tags).where(
                 TaskTag.name == tag.strip().lower()
             ).distinct()
+
+        if overdue_only:
+            stmt = stmt.where(
+                Task.due_date.is_not(None),
+                Task.due_date < current_time,
+                Task.status.not_in([TaskStatus.COMPLETED, TaskStatus.CANCELLED]),
+            )
+        elif today_only:
+            start_of_day = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_of_day = current_time.replace(hour=23, minute=59, second=59, microsecond=999999)
+            stmt = stmt.where(
+                Task.due_date.is_not(None),
+                Task.due_date >= start_of_day,
+                Task.due_date <= end_of_day,
+            )
+        elif upcoming_only:
+            stmt = stmt.where(
+                Task.due_date.is_not(None),
+                Task.due_date >= current_time,
+                Task.status.not_in([TaskStatus.COMPLETED, TaskStatus.CANCELLED]),
+            )
+
+        if recurring_only:
+            stmt = stmt.where(Task.is_recurring == True)
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total = (await self.db.execute(count_stmt)).scalar_one()
@@ -74,6 +104,9 @@ class TaskRepository:
         priority: TaskPriority,
         due_date: Optional[datetime],
         tags: List[str],
+        is_recurring: bool = False,
+        recurrence_rule: Optional[dict] = None,
+        recurrence_parent_id: Optional[uuid.UUID] = None,
     ) -> Task:
         task = Task(
             user_id=user_id,
@@ -81,6 +114,9 @@ class TaskRepository:
             description=description,
             priority=priority,
             due_date=due_date,
+            is_recurring=is_recurring,
+            recurrence_rule=recurrence_rule,
+            recurrence_parent_id=recurrence_parent_id,
         )
         task.tags = [TaskTag(name=name) for name in tags]
         self.db.add(task)
@@ -99,6 +135,8 @@ class TaskRepository:
         due_date: Optional[datetime] = None,
         completed_at: Optional[datetime] = None,
         clear_completed_at: bool = False,
+        is_recurring: Optional[bool] = None,
+        recurrence_rule: Optional[dict] = None,
     ) -> Task:
         if title is not None:
             task.title = title
@@ -114,6 +152,13 @@ class TaskRepository:
             task.completed_at = None
         elif completed_at is not None:
             task.completed_at = completed_at
+        if is_recurring is not None:
+            task.is_recurring = is_recurring
+        if recurrence_rule is not None:
+            task.recurrence_rule = recurrence_rule
+        await self.db.flush()
+        await self.db.refresh(task, attribute_names=["tags"])
+        return task
         await self.db.flush()
         await self.db.refresh(task, attribute_names=["tags"])
         return task

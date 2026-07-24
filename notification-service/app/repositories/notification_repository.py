@@ -33,9 +33,12 @@ class NotificationRepository:
         return result.scalar_one_or_none()
 
     async def list_for_user(
-        self, user_id: uuid.UUID, *, offset: int, limit: int
+        self, user_id: uuid.UUID, *, offset: int, limit: int, unread_only: bool = False
     ) -> Tuple[List[Notification], int]:
         stmt = select(Notification).where(Notification.user_id == user_id)
+
+        if unread_only:
+            stmt = stmt.where(Notification.is_read == False)
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total = (await self.db.execute(count_stmt)).scalar_one()
@@ -47,6 +50,35 @@ class NotificationRepository:
         )
         result = await self.db.execute(stmt)
         return list(result.scalars().all()), total
+
+    async def get_unread_count(self, user_id: uuid.UUID) -> int:
+        stmt = select(func.count()).select_from(Notification).where(
+            Notification.user_id == user_id,
+            Notification.is_read == False,
+        )
+        return (await self.db.execute(stmt)).scalar_one()
+
+    async def mark_as_read(
+        self, notification: Notification, read_at: datetime
+    ) -> Notification:
+        notification.is_read = True
+        notification.read_at = read_at
+        await self.db.flush()
+        await self.db.refresh(notification)
+        return notification
+
+    async def mark_all_as_read(self, user_id: uuid.UUID, read_at: datetime) -> int:
+        stmt = (
+            update(Notification)
+            .where(
+                Notification.user_id == user_id,
+                Notification.is_read == False,
+            )
+            .values(is_read=True, read_at=read_at)
+        )
+        result = await self.db.execute(stmt)
+        await self.db.commit()
+        return result.rowcount
 
     async def upsert(
         self,
@@ -64,6 +96,8 @@ class NotificationRepository:
             existing.status = NotificationStatus.PENDING
             existing.sent_at = None
             existing.failure_reason = None
+            existing.is_read = False
+            existing.read_at = None
             await self.db.flush()
             await self.db.refresh(existing)
             return existing

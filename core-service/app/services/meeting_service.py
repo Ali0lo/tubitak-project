@@ -1,5 +1,6 @@
 """Business logic for meeting management."""
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,8 @@ from app.models.meeting import (
 )
 from app.repositories.meeting_repository import MeetingRepository
 from app.schemas.meeting import MeetingCreate, MeetingUpdate
+from app.services.reminder_service import ReminderService
+from app.schemas.reminder import ReminderCreate
 
 
 class MeetingService:
@@ -20,6 +23,7 @@ class MeetingService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.meetings = MeetingRepository(db)
+        self.reminder_service = ReminderService(db)
 
     async def create_meeting(
         self, user_id: uuid.UUID, payload: MeetingCreate
@@ -33,9 +37,41 @@ class MeetingService:
             start_time=payload.start_time,
             end_time=payload.end_time,
             participants=participants,
+            is_recurring=payload.is_recurring,
+            recurrence_rule=payload.recurrence_rule,
         )
         await self.db.commit()
+
+        # Schedule Default Meeting Reminders (1 hour, 30 min, 15 min, 5 min, at start time)
+        await self._schedule_default_meeting_reminders(user_id, meeting)
+
         return meeting
+
+    async def _schedule_default_meeting_reminders(self, user_id: uuid.UUID, meeting: Meeting) -> None:
+        now = datetime.now(timezone.utc)
+        offsets = [
+            (timedelta(hours=1), f"Meeting '{meeting.title}' starting in 1 hour"),
+            (timedelta(minutes=30), f"Meeting '{meeting.title}' starting in 30 minutes"),
+            (timedelta(minutes=15), f"Meeting '{meeting.title}' starting in 15 minutes"),
+            (timedelta(minutes=5), f"Meeting '{meeting.title}' starts in 5 minutes"),
+            (timedelta(seconds=0), f"Meeting '{meeting.title}' is starting now"),
+        ]
+
+        for delta, msg in offsets:
+            remind_at = meeting.start_time - delta
+            # Skip past reminders! (Part 5)
+            if remind_at > now:
+                try:
+                    await self.reminder_service.create_reminder(
+                        user_id=user_id,
+                        payload=ReminderCreate(
+                            meeting_id=meeting.id,
+                            remind_at=remind_at,
+                            message=msg,
+                        ),
+                    )
+                except Exception:
+                    pass
 
     async def get_meeting(self, user_id: uuid.UUID, meeting_id: uuid.UUID) -> Meeting:
         meeting = await self.meetings.get_by_id(meeting_id)
@@ -51,8 +87,12 @@ class MeetingService:
         offset: int,
         limit: int,
         status: Optional[MeetingStatus] = None,
-        starts_after=None,
-        starts_before=None,
+        starts_after: Optional[datetime] = None,
+        starts_before: Optional[datetime] = None,
+        overdue_only: Optional[bool] = None,
+        missed_only: Optional[bool] = None,
+        today_only: Optional[bool] = None,
+        upcoming_only: Optional[bool] = None,
     ) -> Tuple[List[Meeting], int]:
         return await self.meetings.list_for_user(
             user_id,
@@ -61,12 +101,18 @@ class MeetingService:
             status=status,
             starts_after=starts_after,
             starts_before=starts_before,
+            overdue_only=overdue_only,
+            missed_only=missed_only,
+            today_only=today_only,
+            upcoming_only=upcoming_only,
         )
 
     async def update_meeting(
         self, user_id: uuid.UUID, meeting_id: uuid.UUID, payload: MeetingUpdate
     ) -> Meeting:
         meeting = await self.get_meeting(user_id, meeting_id)
+        start_time_changed = payload.start_time is not None and payload.start_time != meeting.start_time
+
         updated = await self.meetings.update(
             meeting,
             title=payload.title,
@@ -75,8 +121,14 @@ class MeetingService:
             start_time=payload.start_time,
             end_time=payload.end_time,
             status=payload.status,
+            is_recurring=payload.is_recurring,
+            recurrence_rule=payload.recurrence_rule,
         )
         await self.db.commit()
+
+        if start_time_changed:
+            await self._schedule_default_meeting_reminders(user_id, updated)
+
         return updated
 
     async def cancel_meeting(
@@ -111,3 +163,4 @@ class MeetingService:
     def _assert_owner(meeting: Meeting, user_id: uuid.UUID) -> None:
         if meeting.user_id != user_id:
             raise ForbiddenError("You do not have access to this meeting")
+

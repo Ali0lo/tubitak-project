@@ -29,6 +29,9 @@ class MeetingCreate(BaseModel):
     start_time: datetime
     end_time: datetime
     participants: List[ParticipantCreate] = Field(default_factory=list)
+    is_recurring: bool = False
+    recurrence_rule: Optional[dict] = None
+    reminder_offsets: Optional[List[str]] = None
 
     @model_validator(mode="after")
     def _validate_time_range(self) -> "MeetingCreate":
@@ -44,6 +47,8 @@ class MeetingUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     status: Optional[MeetingStatus] = None
+    is_recurring: Optional[bool] = None
+    recurrence_rule: Optional[dict] = None
 
     @model_validator(mode="after")
     def _validate_time_range(self) -> "MeetingUpdate":
@@ -67,10 +72,21 @@ class MeetingResponse(BaseModel):
     start_time: datetime
     end_time: datetime
     status: MeetingStatus
+    is_recurring: bool = False
+    recurrence_rule: Optional[dict] = None
+    recurrence_parent_id: Optional[uuid.UUID] = None
     created_at: datetime
     updated_at: datetime
     participants: List[ParticipantResponse] = Field(default_factory=list)
 
+    # Computed fields
+    is_overdue: bool = False
+    overdue_since: Optional[datetime] = None
+    overdue_duration: Optional[str] = None
+    next_reminder_at: Optional[datetime] = None
+    last_notification_sent: Optional[datetime] = None
+
 
 class ParticipantResponseUpdate(BaseModel):
     response_status: ParticipantResponseStatus
+

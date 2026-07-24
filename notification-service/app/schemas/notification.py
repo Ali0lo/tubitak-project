@@ -33,6 +33,9 @@ class NotificationResponse(BaseModel):
     scheduled_for: datetime
     status: NotificationStatus
     sent_at: Optional[datetime]
+    is_read: bool = False
+    read_at: Optional[datetime] = None
     failure_reason: Optional[str]
     created_at: datetime
     updated_at: datetime
+
