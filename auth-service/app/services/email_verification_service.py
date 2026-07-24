@@ -86,7 +86,8 @@ class EmailVerificationService:
             ValueError if token is invalid or expired.
         """
 
-        token_hash = TokenUtils.hash_token(token)
+        clean_token = token.strip()
+        token_hash = TokenUtils.hash_token(clean_token)
 
         verification = await self.repository.get_valid_token(token_hash)
 
@@ -94,6 +95,8 @@ class EmailVerificationService:
             raise ValueError("Invalid or expired verification token.")
 
         user = verification.user
+        if user is None:
+            raise ValueError("User associated with verification token was not found.")
 
         if user.is_verified:
             return user

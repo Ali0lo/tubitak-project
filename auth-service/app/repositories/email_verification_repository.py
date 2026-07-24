@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.models.email_verification_token import EmailVerificationToken
 
@@ -44,9 +45,9 @@ class EmailVerificationRepository:
         """Return a token by its hash."""
 
         result = await self.db.execute(
-            select(EmailVerificationToken).where(
-                EmailVerificationToken.token_hash == token_hash
-            )
+            select(EmailVerificationToken)
+            .options(joinedload(EmailVerificationToken.user))
+            .where(EmailVerificationToken.token_hash == token_hash)
         )
         return result.scalar_one_or_none()
 
@@ -57,10 +58,12 @@ class EmailVerificationRepository:
         """Return a valid (unused & unexpired) token."""
 
         result = await self.db.execute(
-            select(EmailVerificationToken).where(
+            select(EmailVerificationToken)
+            .options(joinedload(EmailVerificationToken.user))
+            .where(
                 EmailVerificationToken.token_hash == token_hash,
                 EmailVerificationToken.used.is_(False),
-                EmailVerificationToken.expires_at > datetime.utcnow(),
+                EmailVerificationToken.expires_at > datetime.now(timezone.utc),
             )
         )
 

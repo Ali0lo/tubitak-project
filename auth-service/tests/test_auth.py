@@ -164,3 +164,13 @@ async def test_password_reset_request_unknown_email_is_silent(
         json={"email": "unknown@example.com"},
     )
     assert response.status_code == 202
+
+
+async def test_verify_email_invalid_token_returns_400(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": "invalid-token-xyz"},
+    )
+    assert response.status_code == 400
+    assert "Invalid or expired" in response.json()["detail"]
+
