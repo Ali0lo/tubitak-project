@@ -39,8 +39,30 @@ export function StreakCard({ tasks }: StreakCardProps) {
       checkDate = subDays(checkDate, 1);
     }
 
-    // Best streak saved or calculated (minimum equal to current streak or 7 fallback)
-    const bestStreak = Math.max(streak, 7);
+    // Calculate true historical best streak from all completion dates
+    const sortedDates = Array.from(completedDates).sort();
+    let maxStreak = 0;
+    let tempStreak = 0;
+    let prevDateStr: string | null = null;
+
+    for (const dateStr of sortedDates) {
+      if (prevDateStr) {
+        const prev = new Date(prevDateStr);
+        const curr = new Date(dateStr);
+        const diffDays = Math.round((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          tempStreak++;
+        } else if (diffDays > 1) {
+          tempStreak = 1;
+        }
+      } else {
+        tempStreak = 1;
+      }
+      maxStreak = Math.max(maxStreak, tempStreak);
+      prevDateStr = dateStr;
+    }
+
+    const bestStreak = Math.max(streak, maxStreak);
 
     // Today's completion ratio (goal: 3 tasks/day)
     const tasksDoneToday = tasks.filter(
