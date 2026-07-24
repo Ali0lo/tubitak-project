@@ -16,6 +16,7 @@ from app.schemas.auth import (
     ResendVerificationRequest,
     VerifyEmailRequest,
 )
+from app.config.settings import get_settings
 from app.services.email_verification_service import EmailVerificationService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
