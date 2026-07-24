@@ -103,6 +103,10 @@ class BulkRescheduleRequest(BaseModel):
     new_due_date: datetime
 
 
+class BulkCompleteRequest(BaseModel):
+    task_ids: Optional[List[uuid.UUID]] = None
+
+
 class TaskFilterParams(BaseModel):
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None

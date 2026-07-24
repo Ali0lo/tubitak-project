@@ -11,6 +11,7 @@ from app.core.exceptions import CoreServiceError
 from app.models.task import Task, TaskPriority, TaskStatus
 from app.schemas.common import PageResponse
 from app.schemas.task import (
+    BulkCompleteRequest,
     BulkRescheduleRequest,
     TaskCreate,
     TaskResponse,
@@ -135,10 +136,11 @@ async def bulk_reschedule_overdue_tasks(
 
 @router.post("/overdue/complete", response_model=List[TaskResponse])
 async def bulk_complete_overdue_tasks(
-    task_ids: Optional[List[uuid.UUID]] = None,
+    payload: Optional[BulkCompleteRequest] = None,
     user_id: uuid.UUID = Depends(get_current_user_id),
     task_service: TaskService = Depends(get_task_service),
 ) -> List[TaskResponse]:
+    task_ids = payload.task_ids if payload else None
     try:
         completed = await task_service.bulk_complete_overdue(user_id, task_ids)
     except CoreServiceError as exc:
