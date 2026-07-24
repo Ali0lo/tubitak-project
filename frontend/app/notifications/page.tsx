@@ -24,6 +24,7 @@ import {
   useMarkAllNotificationsAsRead,
 } from "@/hooks/use-notifications";
 import { useCreateReminder } from "@/hooks/use-reminders";
+import { isoToLocalInput } from "@/lib/utils";
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread">("all");
@@ -34,7 +35,7 @@ export default function NotificationsPage() {
   const [reminderMessage, setReminderMessage] = useState("");
   const [reminderTime, setReminderTime] = useState(() => {
     const d = new Date(Date.now() + 2 * 60 * 1000); // default 2 mins from now
-    return d.toISOString().slice(0, 16);
+    return isoToLocalInput(d.toISOString());
   });
 
   const { data, isLoading, refetch } = useNotifications(50, filter === "unread");

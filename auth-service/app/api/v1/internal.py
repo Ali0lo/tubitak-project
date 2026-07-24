@@ -34,3 +34,17 @@ async def get_user_by_id(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
     return UserResponse.model_validate(user)
+
+
+@router.get("/users/by-email/{email:path}", response_model=UserResponse)
+async def get_user_by_email(
+    email: str,
+    db: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    repository = UserRepository(db)
+    user = await repository.get_by_email(email)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return UserResponse.model_validate(user)

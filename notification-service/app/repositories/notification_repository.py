@@ -1,9 +1,9 @@
 """Data access layer for the Notification model."""
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, update, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.notification import Notification, NotificationStatus
@@ -35,7 +35,14 @@ class NotificationRepository:
     async def list_for_user(
         self, user_id: uuid.UUID, *, offset: int, limit: int, unread_only: bool = False
     ) -> Tuple[List[Notification], int]:
-        stmt = select(Notification).where(Notification.user_id == user_id)
+        now = datetime.now(timezone.utc)
+        stmt = select(Notification).where(
+            Notification.user_id == user_id,
+            or_(
+                Notification.scheduled_for <= now,
+                Notification.status.in_([NotificationStatus.QUEUED, NotificationStatus.SENT, NotificationStatus.FAILED]),
+            ),
+        )
 
         if unread_only:
             stmt = stmt.where(Notification.is_read == False)
@@ -52,9 +59,14 @@ class NotificationRepository:
         return list(result.scalars().all()), total
 
     async def get_unread_count(self, user_id: uuid.UUID) -> int:
+        now = datetime.now(timezone.utc)
         stmt = select(func.count()).select_from(Notification).where(
             Notification.user_id == user_id,
             Notification.is_read == False,
+            or_(
+                Notification.scheduled_for <= now,
+                Notification.status.in_([NotificationStatus.QUEUED, NotificationStatus.SENT, NotificationStatus.FAILED]),
+            ),
         )
         return (await self.db.execute(stmt)).scalar_one()
 

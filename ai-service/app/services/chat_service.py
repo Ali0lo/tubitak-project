@@ -95,11 +95,13 @@ class ChatService:
         history = await self.messages.list_for_conversation(
             conversation.id, limit=self.settings.MAX_CONVERSATION_HISTORY_MESSAGES
         )
-        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC (%A)")
+        now_utc = datetime.now(timezone.utc)
+        now_local = datetime.now().astimezone()
+        now_str = f"{now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')} / Local: {now_local.strftime('%Y-%m-%d %H:%M:%S %z (%A)')}"
         system_content = (
             f"{SYSTEM_PROMPT}\n"
             f"Current date and time: {now_str}. "
-            "Use this as reference when resolving relative dates like 'today', 'tomorrow', 'next week', etc."
+            "Use this as reference when resolving relative dates like 'today', 'tomorrow', 'next week', or specific clock times. Ensure tool call timestamps specify ISO string with timezone or UTC offset."
         )
         openai_messages: List[dict] = [
             {"role": "system", "content": system_content}

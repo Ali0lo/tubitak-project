@@ -106,6 +106,12 @@ class TaskService:
             return
 
         now = datetime.now(timezone.utc)
+        due_date = task.due_date
+        if due_date.tzinfo is None:
+            due_date = due_date.replace(tzinfo=timezone.utc)
+        else:
+            due_date = due_date.astimezone(timezone.utc)
+
         offsets = [
             (timedelta(days=1), f"Task '{task.title}' is due in 1 day"),
             (timedelta(hours=1), f"Task '{task.title}' is due in 1 hour"),
@@ -114,8 +120,8 @@ class TaskService:
         ]
 
         for delta, msg in offsets:
-            remind_at = task.due_date - delta
-            if remind_at > now:
+            remind_at = due_date - delta
+            if remind_at >= now:
                 try:
                     await self.reminder_service.create_reminder(
                         user_id=user_id,
@@ -127,7 +133,7 @@ class TaskService:
                     )
                 except Exception:
                     pass  # Non-fatal if reminder fail
-            elif delta == timedelta(seconds=0) and abs((now - task.due_date).total_seconds()) < 300:
+            elif delta == timedelta(seconds=0) and abs((now - due_date).total_seconds()) < 300:
                 try:
                     await self.reminder_service.create_reminder(
                         user_id=user_id,

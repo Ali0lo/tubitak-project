@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.clients.auth_client import AuthClient
 from app.clients.notification_client import NotificationClient
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.models.meeting import (
@@ -25,11 +26,13 @@ class MeetingService:
         self,
         db: AsyncSession,
         notification_client: Optional[NotificationClient] = None,
+        auth_client: Optional[AuthClient] = None,
     ) -> None:
         self.db = db
         self.meetings = MeetingRepository(db)
         self.reminder_service = ReminderService(db)
         self.notification_client = notification_client or NotificationClient()
+        self.auth_client = auth_client or AuthClient()
 
     async def get_reminder_metadata(self, meeting_ids: List[uuid.UUID]) -> dict:
         now = datetime.now(timezone.utc)
@@ -38,7 +41,11 @@ class MeetingService:
     async def create_meeting(
         self, user_id: uuid.UUID, payload: MeetingCreate
     ) -> Meeting:
-        participants = [(p.email, p.name) for p in payload.participants]
+        participants = []
+        for p in payload.participants:
+            p_user_id = await self.auth_client.get_user_id_by_email(p.email)
+            participants.append((p.email, p.name, p_user_id))
+
         meeting = await self.meetings.create(
             user_id=user_id,
             title=payload.title,
@@ -93,9 +100,34 @@ class MeetingService:
         ]
 
         for uid in target_user_ids:
+            # If meeting starts within 5 minutes (and in the future), schedule an immediate warning if 5m offset passed
+            seconds_until_start = (start_time - now).total_seconds()
+            if 0 < seconds_until_start < 300:
+                mins_left = max(1, int(seconds_until_start // 60))
+                short_notice_msg = f"Meeting '{meeting.title}' starts in {mins_left} minute{'s' if mins_left > 1 else ''}"
+                try:
+                    if uid == user_id:
+                        await self.reminder_service.create_reminder(
+                            user_id=user_id,
+                            payload=ReminderCreate(
+                                meeting_id=meeting.id,
+                                remind_at=now,
+                                message=short_notice_msg,
+                            ),
+                        )
+                    else:
+                        await self.notification_client.schedule_reminder_notification(
+                            reminder_id=f"{meeting.id}:short_notice:{uid}",
+                            user_id=uid,
+                            remind_at=now,
+                            message=short_notice_msg,
+                        )
+                except Exception:
+                    pass
+
             for key, delta, msg in offsets:
                 remind_at = start_time - delta
-                if remind_at > now:
+                if remind_at >= now:
                     try:
                         if uid == user_id:
                             await self.reminder_service.create_reminder(

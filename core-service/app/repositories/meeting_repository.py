@@ -111,10 +111,17 @@ class MeetingRepository:
             recurrence_rule=recurrence_rule,
             recurrence_parent_id=recurrence_parent_id,
         )
-        meeting.participants = [
-            MeetingParticipant(email=email, name=name)
-            for email, name in participants
-        ]
+        participant_objects = []
+        for item in participants:
+            if len(item) == 3:
+                email, name, p_user_id = item
+            else:
+                email, name = item
+                p_user_id = None
+            participant_objects.append(
+                MeetingParticipant(email=email, name=name, user_id=p_user_id)
+            )
+        meeting.participants = participant_objects
         self.db.add(meeting)
         await self.db.flush()
         await self.db.refresh(meeting, attribute_names=["participants"])

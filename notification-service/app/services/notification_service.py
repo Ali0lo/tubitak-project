@@ -21,11 +21,17 @@ class NotificationService:
         self.queue = queue
 
     async def schedule(self, payload: ScheduleNotificationRequest) -> Notification:
+        scheduled_for_input = payload.scheduled_for
+        if scheduled_for_input.tzinfo is None:
+            scheduled_for_input = scheduled_for_input.replace(tzinfo=timezone.utc)
+        else:
+            scheduled_for_input = scheduled_for_input.astimezone(timezone.utc)
+
         notification = await self.notifications.upsert(
             source=payload.source,
             source_reference_id=payload.source_reference_id,
             user_id=payload.user_id,
-            scheduled_for=payload.scheduled_for,
+            scheduled_for=scheduled_for_input,
             message=payload.message,
         )
         await self.db.commit()
