@@ -9,12 +9,12 @@ import type { Task, TaskPriority } from "@/types";
 
 const priorityTone: Record<
   TaskPriority,
-  "neutral" | "forest" | "amber" | "brick"
+  "low" | "medium" | "high" | "urgent"
 > = {
-  low: "neutral",
-  medium: "forest",
-  high: "amber",
-  urgent: "brick",
+  low: "low",
+  medium: "medium",
+  high: "high",
+  urgent: "urgent",
 };
 
 interface TaskCardProps {

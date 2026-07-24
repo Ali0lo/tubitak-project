@@ -18,6 +18,7 @@ export interface Meeting {
   title: string;
   description: string | null;
   location: string | null;
+  meeting_link?: string | null;
   start_time: string;
   end_time: string;
   status: MeetingStatus;
