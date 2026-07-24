@@ -7,6 +7,7 @@ natural-language request, and this service drives that loop, persists
 every message and tool call for auditability, and returns the final
 assistant reply.
 """
+from datetime import datetime, timezone
 import json
 import time
 import uuid
@@ -94,8 +95,14 @@ class ChatService:
         history = await self.messages.list_for_conversation(
             conversation.id, limit=self.settings.MAX_CONVERSATION_HISTORY_MESSAGES
         )
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC (%A)")
+        system_content = (
+            f"{SYSTEM_PROMPT}\n"
+            f"Current date and time: {now_str}. "
+            "Use this as reference when resolving relative dates like 'today', 'tomorrow', 'next week', etc."
+        )
         openai_messages: List[dict] = [
-            {"role": "system", "content": SYSTEM_PROMPT}
+            {"role": "system", "content": system_content}
         ] + [_message_to_openai_dict(m) for m in history]
 
         for _ in range(self.settings.MAX_TOOL_ITERATIONS):

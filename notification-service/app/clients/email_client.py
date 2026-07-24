@@ -62,3 +62,4 @@ class EmailClient:
             if self.username and self.password:
                 server.login(self.username, self.password)
             server.sendmail(self.from_email, [to_email], message.as_string())
+            logger.info("Dispatched notification email to %s with subject: %s", to_email, content.subject)

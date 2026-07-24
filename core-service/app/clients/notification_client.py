@@ -33,7 +33,7 @@ class NotificationClient:
     async def schedule_reminder_notification(
         self,
         *,
-        reminder_id: uuid.UUID,
+        reminder_id: uuid.UUID | str,
         user_id: uuid.UUID,
         remind_at: datetime,
         message: Optional[str],

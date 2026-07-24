@@ -34,8 +34,14 @@ class NotificationService:
         # instant), dispatch it immediately rather than waiting for
         # the next scheduler poll.
         now = datetime.now(timezone.utc)
+        scheduled_for = notification.scheduled_for
+        if scheduled_for.tzinfo is None:
+            scheduled_for_utc = scheduled_for.replace(tzinfo=timezone.utc)
+        else:
+            scheduled_for_utc = scheduled_for.astimezone(timezone.utc)
+
         if (
-            notification.scheduled_for.replace(tzinfo=timezone.utc) <= now
+            scheduled_for_utc <= now
             and notification.status == NotificationStatus.PENDING
         ):
             notification.status = NotificationStatus.QUEUED

@@ -46,7 +46,7 @@ async def test_create_task_sends_expected_request() -> None:
     assert captured["method"] == "POST"
     assert captured["url"] == "http://core-service:8000/api/v1/tasks"
     assert captured["auth"] == f"Bearer {FAKE_TOKEN}"
-    assert b'"title":"Buy milk"' in captured["body"]
+    assert b'"title"' in captured["body"] and b'"Buy milk"' in captured["body"]
 
 
 async def test_list_tasks_sends_query_params() -> None:

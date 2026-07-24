@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.clients.notification_client import NotificationClient
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.models.meeting import (
     Meeting,
@@ -20,10 +21,15 @@ from app.schemas.reminder import ReminderCreate
 class MeetingService:
     """Orchestrates meeting use cases, enforcing ownership rules."""
 
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(
+        self,
+        db: AsyncSession,
+        notification_client: Optional[NotificationClient] = None,
+    ) -> None:
         self.db = db
         self.meetings = MeetingRepository(db)
         self.reminder_service = ReminderService(db)
+        self.notification_client = notification_client or NotificationClient()
 
     async def get_reminder_metadata(self, meeting_ids: List[uuid.UUID]) -> dict:
         now = datetime.now(timezone.utc)
@@ -53,6 +59,12 @@ class MeetingService:
 
     async def _schedule_default_meeting_reminders(self, user_id: uuid.UUID, meeting: Meeting) -> None:
         now = datetime.now(timezone.utc)
+        start_time = meeting.start_time
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+        else:
+            start_time = start_time.astimezone(timezone.utc)
+
         target_user_ids = {user_id}
         if meeting.participants:
             for participant in meeting.participants:
@@ -64,7 +76,7 @@ class MeetingService:
             if uid != user_id:
                 try:
                     await self.notification_client.schedule_reminder_notification(
-                        reminder_id=meeting.id,
+                        reminder_id=f"{meeting.id}:invitation:{uid}",
                         user_id=uid,
                         remind_at=now,
                         message=f"Meeting Invitation: You are included in '{meeting.title}'",
@@ -73,16 +85,16 @@ class MeetingService:
                     pass
 
         offsets = [
-            (timedelta(hours=1), f"Meeting '{meeting.title}' starting in 1 hour"),
-            (timedelta(minutes=30), f"Meeting '{meeting.title}' starting in 30 minutes"),
-            (timedelta(minutes=15), f"Meeting '{meeting.title}' starting in 15 minutes"),
-            (timedelta(minutes=5), f"Meeting '{meeting.title}' starts in 5 minutes"),
-            (timedelta(seconds=0), f"Meeting '{meeting.title}' is starting now"),
+            ("1h", timedelta(hours=1), f"Meeting '{meeting.title}' starting in 1 hour"),
+            ("30m", timedelta(minutes=30), f"Meeting '{meeting.title}' starting in 30 minutes"),
+            ("15m", timedelta(minutes=15), f"Meeting '{meeting.title}' starting in 15 minutes"),
+            ("5m", timedelta(minutes=5), f"Meeting '{meeting.title}' starts in 5 minutes"),
+            ("now", timedelta(seconds=0), f"Meeting '{meeting.title}' is starting now"),
         ]
 
         for uid in target_user_ids:
-            for delta, msg in offsets:
-                remind_at = meeting.start_time - delta
+            for key, delta, msg in offsets:
+                remind_at = start_time - delta
                 if remind_at > now:
                     try:
                         if uid == user_id:
@@ -96,14 +108,14 @@ class MeetingService:
                             )
                         else:
                             await self.notification_client.schedule_reminder_notification(
-                                reminder_id=meeting.id,
+                                reminder_id=f"{meeting.id}:{key}:{uid}",
                                 user_id=uid,
                                 remind_at=remind_at,
                                 message=msg,
                             )
                     except Exception:
                         pass
-                elif delta == timedelta(seconds=0) and abs((now - meeting.start_time).total_seconds()) < 300:
+                elif delta == timedelta(seconds=0) and abs((now - start_time).total_seconds()) < 300:
                     try:
                         if uid == user_id:
                             await self.reminder_service.create_reminder(
@@ -116,7 +128,7 @@ class MeetingService:
                             )
                         else:
                             await self.notification_client.schedule_reminder_notification(
-                                reminder_id=meeting.id,
+                                reminder_id=f"{meeting.id}:{key}:{uid}",
                                 user_id=uid,
                                 remind_at=now,
                                 message=msg,
