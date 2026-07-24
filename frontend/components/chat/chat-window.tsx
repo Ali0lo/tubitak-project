@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { ChatInput } from "@/components/chat/chat-input";
-import { MessageBubble } from "@/components/chat/message-bubble";
+import { MessageBubble, TypingIndicatorBubble } from "@/components/chat/message-bubble";
 import { Spinner } from "@/components/ui/spinner";
 import { useConversation, useSendMessage } from "@/hooks/use-chat";
 
@@ -22,7 +22,7 @@ export function ChatWindow({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation?.messages.length]);
+  }, [conversation?.messages.length, sendMessage.isPending]);
 
   const handleSend = (text: string) => {
     sendMessage.mutate(
@@ -34,6 +34,9 @@ export function ChatWindow({
       }
     );
   };
+
+  const messagesList = conversation?.messages ?? [];
+  const lastMsgIndex = messagesList.length - 1;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -52,9 +55,14 @@ export function ChatWindow({
           <Spinner label="Loading conversation" />
         ) : (
           <>
-            {conversation?.messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+            {messagesList.map((message, idx) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                animateStream={idx === lastMsgIndex && message.role === "assistant"}
+              />
             ))}
+            {sendMessage.isPending && <TypingIndicatorBubble />}
             <div ref={bottomRef} />
           </>
         )}

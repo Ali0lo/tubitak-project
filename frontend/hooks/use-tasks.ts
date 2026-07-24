@@ -11,6 +11,8 @@ import type {
   TaskUpdateInput,
 } from "@/types";
 
+import { triggerTaskCompletionEffect } from "@/lib/completion";
+
 const tasksKey = (filters: TaskFilters = {}) => ["tasks", filters] as const;
 
 export function useTasks(filters: TaskFilters = {}) {
@@ -51,8 +53,11 @@ export function useUpdateTask() {
       taskId: string;
       input: TaskUpdateInput;
     }) => apiClient.patch<Task>(`/api/v1/tasks/${taskId}`, input),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      if (variables.input.status === "completed") {
+        triggerTaskCompletionEffect();
+      }
     },
   });
 }
@@ -95,6 +100,7 @@ export function useCompleteOverdue() {
       apiClient.post<Task[]>("/api/v1/tasks/overdue/complete", taskIds ? { task_ids: taskIds } : {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      triggerTaskCompletionEffect();
     },
   });
 }
