@@ -217,15 +217,15 @@ export default function DashboardPage() {
           <Card className="border-red-200 bg-red-50/20 p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-red-200 pb-3">
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-                <h2 className="font-display text-lg font-semibold text-red-900">
+                <AlertCircle className="h-5 w-5 text-brick" />
+                <h2 className="font-display text-lg font-semibold text-brick">
                   Overdue Tasks ({overdueTasks.length})
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => completeOverdue.mutate(undefined)}
-                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md transition-colors"
+                className="px-3 py-1 bg-brick hover:bg-brick/90 text-paper text-xs font-medium rounded-md transition-colors"
               >
                 Complete All Overdue
               </button>
@@ -235,7 +235,7 @@ export default function DashboardPage() {
               {overdueTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white rounded-lg border border-red-200 shadow-sm gap-3"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-paper-raised rounded-lg border border-brick/30 shadow-sm gap-3"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -244,10 +244,11 @@ export default function DashboardPage() {
                         {task.priority}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-red-700 font-mono">
+                    <div className="flex items-center gap-3 text-xs text-brick font-mono">
                       <span>Due: {task.due_date ? format(new Date(task.due_date), "MMM d, HH:mm") : "N/A"}</span>
                       <span>•</span>
                       <span className="font-semibold">{task.overdue_duration}</span>
+
                     </div>
                   </div>
 

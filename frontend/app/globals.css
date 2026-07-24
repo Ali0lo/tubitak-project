@@ -22,21 +22,21 @@
   }
 
   .dark {
-    --color-paper: #121614;
-    --color-paper-raised: #1A201C;
-    --color-paper-line: #2A322C;
-    --color-ink: #E8ECE9;
-    --color-ink-muted: #A0ACA2;
-    --color-ink-faint: #6E7C70;
-    --color-forest: #2D6E63;
-    --color-forest-dark: #1C443D;
-    --color-forest-light: #3D8B7E;
-    --color-forest-tint: #1B2A26;
-    --color-amber: #E08B3E;
-    --color-amber-dark: #B86F28;
-    --color-amber-tint: #2C2218;
-    --color-brick: #C85244;
-    --color-brick-tint: #2E1B19;
+    --color-paper: #0C0F0D;
+    --color-paper-raised: #151916;
+    --color-paper-line: #242B26;
+    --color-ink: #F0F4F1;
+    --color-ink-muted: #9DA89F;
+    --color-ink-faint: #6A786C;
+    --color-forest: #258D7C;
+    --color-forest-dark: #121816;
+    --color-forest-light: #32B9A4;
+    --color-forest-tint: #182B25;
+    --color-amber: #E68C3A;
+    --color-amber-dark: #B9712B;
+    --color-amber-tint: #2C2116;
+    --color-brick: #E05646;
+    --color-brick-tint: #301C1A;
   }
 
   html {

@@ -198,19 +198,20 @@ export function CalendarView() {
       : (item as Task).due_date ? isSameDay(new Date((item as Task).due_date!), new Date()) : false;
 
     if (isCancelled) {
-      return "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200";
+      return "bg-paper-line/40 text-ink-muted border-paper-line hover:bg-paper-line/60";
     }
     if (isCompleted) {
-      return "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200";
+      return "bg-forest-tint text-forest border-forest/30 hover:bg-forest-tint/80";
     }
     if (isOverdue) {
-      return "bg-red-100 text-red-800 border-red-300 hover:bg-red-200 font-semibold";
+      return "bg-brick-tint text-brick border-brick/40 hover:bg-brick-tint/80 font-semibold";
     }
     if (isToday) {
-      return "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200";
+      return "bg-amber-tint text-amber-dark border-amber/40 hover:bg-amber-tint/80 font-semibold";
     }
-    return "bg-sky-100 text-sky-800 border-sky-300 hover:bg-sky-200";
+    return "bg-forest-tint/40 text-forest-light border-forest-light/30 hover:bg-forest-tint/60";
   };
+
 
   return (
     <Card className="overflow-hidden">
