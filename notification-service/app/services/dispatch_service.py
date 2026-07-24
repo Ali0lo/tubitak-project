@@ -16,7 +16,7 @@ from app.repositories.notification_preference_repository import (
     NotificationPreferenceRepository,
 )
 from app.repositories.notification_repository import NotificationRepository
-from app.templates.notification_email import render_reminder_email
+from app.services.email_service import EmailService
 
 logger = logging.getLogger("notification-service.dispatch")
 
@@ -25,14 +25,16 @@ class DispatchService:
     def __init__(
         self,
         db: AsyncSession,
-        email_client: EmailClient,
-        auth_client: AuthServiceClient,
+        email_client: EmailClient | None = None,
+        auth_client: AuthServiceClient | None = None,
+        email_service: EmailService | None = None,
     ) -> None:
         self.db = db
         self.notifications = NotificationRepository(db)
         self.preferences = NotificationPreferenceRepository(db)
-        self.email_client = email_client
-        self.auth_client = auth_client
+        self.email_service = email_service or EmailService(email_client=email_client)
+        self.email_client = self.email_service.email_client
+        self.auth_client = auth_client or AuthServiceClient()
 
     async def dispatch(self, notification_id: uuid.UUID) -> None:
         notification = await self.notifications.get_by_id(notification_id)
@@ -57,8 +59,9 @@ class DispatchService:
             email = await self.auth_client.get_user_email(notification.user_id)
             if email:
                 try:
-                    content = render_reminder_email(notification.message)
-                    await self.email_client.send(to_email=email, content=content)
+                    await self.email_service.send_notification_email(
+                        to_email=email, message=notification.message
+                    )
                 except EmailDispatchError as exc:
                     await self.notifications.mark_failed(notification, str(exc))
                     await self.db.commit()
