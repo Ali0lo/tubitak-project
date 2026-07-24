@@ -46,7 +46,7 @@ export default function DashboardPage() {
 
   const allTasks = useMemo(() => tasksData?.items ?? [], [tasksData]);
   const allMeetings = useMemo(() => meetingsData?.items ?? [], [meetingsData]);
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
 
   // 1. Today's Tasks
   const todayTasks = useMemo(
@@ -299,7 +299,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between border-b border-paper-line pb-3">
               <div className="flex items-center gap-2">
                 <ListTodo className="h-5 w-5 text-amber-600" />
-                <h2 className="font-display text-base font-semibold text-ink">Today's Tasks</h2>
+                <h2 className="font-display text-base font-semibold text-ink">Today&apos;s Tasks</h2>
               </div>
               <span className="text-xs font-mono text-ink-faint">{todayTasks.length} items</span>
             </div>
