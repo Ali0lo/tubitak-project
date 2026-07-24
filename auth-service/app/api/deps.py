@@ -10,12 +10,22 @@ from app.db.session import get_db
 from app.models.user import User
 from app.services.auth_service import AuthService
 
+from app.services.email_verification_service import EmailVerificationService
+
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
     """Provide an AuthService bound to the request-scoped DB session."""
     return AuthService(db)
+
+
+async def get_email_verification_service(
+    db: AsyncSession = Depends(get_db),
+) -> EmailVerificationService:
+    """Provide an EmailVerificationService bound to the request-scoped DB session."""
+    return EmailVerificationService(db)
+
 
 
 async def get_current_user(

@@ -3,19 +3,20 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
-from app.api.deps import get_auth_service, get_current_user
-from app.config.settings import get_settings
-from app.core.exceptions import AuthServiceError
-from app.models.user import User
+from app.api.deps import (
+    get_auth_service,
+    get_current_user,
+    get_email_verification_service,
+)
 from app.schemas.auth import (
     LoginRequest,
     PasswordResetConfirm,
     PasswordResetRequest,
     RefreshRequest,
+    ResendVerificationRequest,
+    VerifyEmailRequest,
 )
-from app.schemas.token import TokenResponse
-from app.schemas.user import UserCreate, UserResponse
-from app.services.auth_service import AuthService
+from app.services.email_verification_service import EmailVerificationService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
@@ -44,9 +45,14 @@ def _set_refresh_cookie(response: Response, token: str) -> None:
 async def register(
     payload: UserCreate,
     auth_service: AuthService = Depends(get_auth_service),
+    verification_service: EmailVerificationService = Depends(
+        get_email_verification_service
+    ),
 ) -> UserResponse:
     try:
         user = await auth_service.register(payload)
+        # Create initial email verification token
+        await verification_service.create_verification_token(user)
     except AuthServiceError as exc:
         raise HTTPException(
             status_code=exc.status_code, detail=exc.message
@@ -122,6 +128,36 @@ async def read_me(current_user: User = Depends(get_current_user)) -> UserRespons
     return UserResponse.model_validate(current_user)
 
 
+@router.post("/verify-email", response_model=UserResponse)
+async def verify_email(
+    payload: VerifyEmailRequest,
+    verification_service: EmailVerificationService = Depends(
+        get_email_verification_service
+    ),
+) -> UserResponse:
+    try:
+        user = await verification_service.verify_email(payload.token)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
+    return UserResponse.model_validate(user)
+
+
+@router.post("/resend-verification", status_code=status.HTTP_200_OK)
+async def resend_verification(
+    payload: ResendVerificationRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+    verification_service: EmailVerificationService = Depends(
+        get_email_verification_service
+    ),
+) -> dict[str, str]:
+    user = await auth_service.users.get_by_email(payload.email)
+    if user and not user.is_verified:
+        await verification_service.resend_verification(user)
+    return {"message": "If the email is unverified, a verification token has been generated"}
+
+
 @router.post("/password-reset/request", status_code=status.HTTP_202_ACCEPTED)
 async def request_password_reset(
     payload: PasswordResetRequest,
@@ -145,3 +181,4 @@ async def confirm_password_reset(
             status_code=exc.status_code, detail=exc.message
         ) from exc
     return {"message": "Password has been reset successfully"}
+

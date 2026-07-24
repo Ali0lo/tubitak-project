@@ -33,7 +33,10 @@ PUBLIC_PATH_PREFIXES: Tuple[str, ...] = (
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
     "/api/v1/auth/password-reset",
+    "/api/v1/auth/verify-email",
+    "/api/v1/auth/resend-verification",
 )
+
 
 
 def resolve_target(path: str) -> Optional[str]:
