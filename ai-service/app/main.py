@@ -16,6 +16,23 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application startup/shutdown hooks."""
+    import asyncio
+    import logging
+    import subprocess
+
+    logger = logging.getLogger("ai-service.startup")
+    try:
+        def run_alembic():
+            res = subprocess.run(["alembic", "upgrade", "head"], capture_output=True, text=True)
+            if res.returncode != 0:
+                logger.warning(f"Alembic migration warning: {res.stderr}")
+            else:
+                logger.info("Alembic migrations applied successfully.")
+
+        await asyncio.to_thread(run_alembic)
+    except Exception as exc:
+        logger.warning(f"Failed to auto-run migrations: {exc}")
+
     yield
 
 
