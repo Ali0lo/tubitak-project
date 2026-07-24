@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bell,
   CalendarDays,
   CheckSquare,
   LayoutDashboard,
@@ -12,6 +13,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useLogout } from "@/hooks/use-auth";
+import { useUnreadNotificationCount } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -19,12 +21,15 @@ const NAV_ITEMS = [
   { href: "/tasks", label: "Tasks", icon: CheckSquare },
   { href: "/meetings", label: "Meetings", icon: Users },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/chat", label: "Chat", icon: MessageSquareText },
 ] as const;
 
 export function Sidebar() {
   const pathname = usePathname();
   const logout = useLogout();
+  const { data: unreadData } = useUnreadNotificationCount();
+  const unreadCount = unreadData?.unread_count || 0;
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col bg-forest text-paper">
@@ -43,14 +48,21 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                "focus-ring flex items-center gap-3 rounded-seal px-3 py-2 text-sm transition-colors",
+                "focus-ring flex items-center justify-between gap-3 rounded-seal px-3 py-2 text-sm transition-colors",
                 isActive
                   ? "bg-paper/10 text-paper"
                   : "text-paper/70 hover:bg-paper/5 hover:text-paper"
               )}
             >
-              <Icon className="h-4 w-4" />
-              {label}
+              <div className="flex items-center gap-3">
+                <Icon className="h-4 w-4" />
+                {label}
+              </div>
+              {href === "/notifications" && unreadCount > 0 ? (
+                <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              ) : null}
             </Link>
           );
         })}

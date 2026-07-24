@@ -3,12 +3,55 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-paper: #F5F6F3;
+    --color-paper-raised: #FFFFFF;
+    --color-paper-line: #E4E6E1;
+    --color-ink: #20241F;
+    --color-ink-muted: #5B655C;
+    --color-ink-faint: #8A9A8E;
+    --color-forest: #1F4B43;
+    --color-forest-dark: #163731;
+    --color-forest-light: #2F6B5E;
+    --color-forest-tint: #E6EDEA;
+    --color-amber: #C9762C;
+    --color-amber-dark: #A65F20;
+    --color-amber-tint: #F6E9D9;
+    --color-brick: #9B3A2E;
+    --color-brick-tint: #F3E1DE;
+  }
+
+  .dark {
+    --color-paper: #121614;
+    --color-paper-raised: #1A201C;
+    --color-paper-line: #2A322C;
+    --color-ink: #E8ECE9;
+    --color-ink-muted: #A0ACA2;
+    --color-ink-faint: #6E7C70;
+    --color-forest: #2D6E63;
+    --color-forest-dark: #1C443D;
+    --color-forest-light: #3D8B7E;
+    --color-forest-tint: #1B2A26;
+    --color-amber: #E08B3E;
+    --color-amber-dark: #B86F28;
+    --color-amber-tint: #2C2218;
+    --color-brick: #C85244;
+    --color-brick-tint: #2E1B19;
+  }
+
   html {
     @apply antialiased;
+    color-scheme: light;
   }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-paper text-ink font-sans;
+    @apply bg-paper text-ink font-sans transition-colors duration-200;
   }
+
   ::selection {
     @apply bg-amber-tint text-forest-dark;
   }

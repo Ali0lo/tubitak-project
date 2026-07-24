@@ -3,6 +3,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { formatLongDate } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface HeaderProps {
   title: string;
@@ -21,6 +22,7 @@ export function Header({ title }: HeaderProps) {
         </p>
       </div>
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <NotificationBell />
         {user ? (
           <div className="text-right border-l border-paper-line pl-4">

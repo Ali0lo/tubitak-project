@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -8,31 +9,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // "Hand-kept ledger" token system.
+        // "Hand-kept ledger" token system with CSS custom variable values for Dark/Light mode support.
         paper: {
-          DEFAULT: "#F5F6F3", // cool paper background, deliberately not cream
-          raised: "#FFFFFF",
-          line: "#E4E6E1", // hairline rule color
+          DEFAULT: "var(--color-paper)",
+          raised: "var(--color-paper-raised)",
+          line: "var(--color-paper-line)",
         },
         ink: {
-          DEFAULT: "#20241F", // near-black warm charcoal, primary text
-          muted: "#5B655C",
-          faint: "#8A9A8E",
+          DEFAULT: "var(--color-ink)",
+          muted: "var(--color-ink-muted)",
+          faint: "var(--color-ink-faint)",
         },
         forest: {
-          DEFAULT: "#1F4B43", // deep teal-ink, primary accent
-          dark: "#163731",
-          light: "#2F6B5E",
-          tint: "#E6EDEA",
+          DEFAULT: "var(--color-forest)",
+          dark: "var(--color-forest-dark)",
+          light: "var(--color-forest-light)",
+          tint: "var(--color-forest-tint)",
         },
         amber: {
-          DEFAULT: "#C9762C", // burnt amber, secondary accent
-          dark: "#A65F20",
-          tint: "#F6E9D9",
+          DEFAULT: "var(--color-amber)",
+          dark: "var(--color-amber-dark)",
+          tint: "var(--color-amber-tint)",
         },
         brick: {
-          DEFAULT: "#9B3A2E", // urgent/danger, deliberately not bright red
-          tint: "#F3E1DE",
+          DEFAULT: "var(--color-brick)",
+          tint: "var(--color-brick-tint)",
         },
       },
       fontFamily: {

@@ -63,7 +63,6 @@ class MeetingService:
 
         for delta, msg in offsets:
             remind_at = meeting.start_time - delta
-            # Skip past reminders! (Part 5)
             if remind_at > now:
                 try:
                     await self.reminder_service.create_reminder(
@@ -76,6 +75,19 @@ class MeetingService:
                     )
                 except Exception:
                     pass
+            elif delta == timedelta(seconds=0) and abs((now - meeting.start_time).total_seconds()) < 300:
+                try:
+                    await self.reminder_service.create_reminder(
+                        user_id=user_id,
+                        payload=ReminderCreate(
+                            meeting_id=meeting.id,
+                            remind_at=now,
+                            message=msg,
+                        ),
+                    )
+                except Exception:
+                    pass
+
 
     async def get_meeting(self, user_id: uuid.UUID, meeting_id: uuid.UUID) -> Meeting:
         meeting = await self.meetings.get_by_id(meeting_id)

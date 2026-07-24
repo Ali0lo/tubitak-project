@@ -110,11 +110,11 @@ class TaskService:
             (timedelta(days=1), f"Task '{task.title}' is due in 1 day"),
             (timedelta(hours=1), f"Task '{task.title}' is due in 1 hour"),
             (timedelta(minutes=15), f"Task '{task.title}' is due in 15 minutes"),
+            (timedelta(seconds=0), f"Task '{task.title}' is due now"),
         ]
 
         for delta, msg in offsets:
             remind_at = task.due_date - delta
-            # Skip past reminders! (Part 5)
             if remind_at > now:
                 try:
                     await self.reminder_service.create_reminder(
@@ -127,6 +127,19 @@ class TaskService:
                     )
                 except Exception:
                     pass  # Non-fatal if reminder fail
+            elif delta == timedelta(seconds=0) and abs((now - task.due_date).total_seconds()) < 300:
+                try:
+                    await self.reminder_service.create_reminder(
+                        user_id=user_id,
+                        payload=ReminderCreate(
+                            task_id=task.id,
+                            remind_at=now,
+                            message=msg,
+                        ),
+                    )
+                except Exception:
+                    pass
+
 
     async def get_task(self, user_id: uuid.UUID, task_id: uuid.UUID) -> Task:
         task = await self.tasks.get_by_id(task_id)

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bell, Check, CheckCheck, X } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Bell, Check, CheckCheck, ExternalLink, X } from "lucide-react";
 import { format } from "date-fns";
+import Link from "next/link";
 
 import { apiClient } from "@/lib/api-client";
 import { PageResponse } from "@/types";
@@ -25,7 +26,28 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [toastQueue, setToastQueue] = useState<NotificationItem[]>([]);
-  const [seenToastIds, setSeenToastIds] = useState<Set<string>>(() => new Set());
+  const seenToastIdsRef = useRef<Set<string>>(new Set());
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Request browser notification permission on mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+    }
+  }, []);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const fetchNotifications = async () => {
     try {
@@ -43,19 +65,30 @@ export function NotificationBell() {
 
       // Check for new unread notifications that haven't been shown as toast popups yet
       const newToasts: NotificationItem[] = [];
-      setSeenToastIds((prevSeen) => {
-        const nextSeen = new Set(prevSeen);
-        items.forEach((item) => {
-          if (!item.is_read && !nextSeen.has(item.id)) {
-            nextSeen.add(item.id);
-            newToasts.push(item);
+      const currentSeen = seenToastIdsRef.current;
+
+      items.forEach((item) => {
+        if (!item.is_read && !currentSeen.has(item.id)) {
+          currentSeen.add(item.id);
+          newToasts.push(item);
+
+          // Trigger native Web Notification popup if allowed
+          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+            try {
+              new Notification("Todotak Reminder Alert", {
+                body: item.message,
+                icon: "/favicon.ico",
+              });
+            } catch (e) {
+              // Ignore native notification errors
+            }
           }
-        });
-        if (newToasts.length > 0) {
-          setToastQueue((prevToasts) => [...prevToasts, ...newToasts]);
         }
-        return nextSeen;
       });
+
+      if (newToasts.length > 0) {
+        setToastQueue((prev) => [...prev, ...newToasts]);
+      }
     } catch (e) {
       // Ignore poll errors
     }
@@ -63,7 +96,7 @@ export function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000); // poll every 15 seconds
+    const interval = setInterval(fetchNotifications, 8000); // Poll every 8 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -89,7 +122,7 @@ export function NotificationBell() {
     setToastQueue((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Auto-dismiss toast after 6 seconds
+  // Auto-dismiss first toast after 6 seconds
   useEffect(() => {
     if (toastQueue.length > 0) {
       const timer = setTimeout(() => {
@@ -109,8 +142,8 @@ export function NotificationBell() {
             className="pointer-events-auto p-4 rounded-xl bg-ink text-paper shadow-2xl border border-paper-line/20 flex items-start justify-between gap-3 animate-in slide-in-from-top-5 duration-300"
           >
             <div className="space-y-1">
-              <p className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold">
-                Reminder Alert
+              <p className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold flex items-center gap-1">
+                <Bell className="h-3 w-3 inline" /> Reminder Alert
               </p>
               <p className="text-sm font-medium">{toast.message}</p>
               <p className="text-[10px] text-paper-muted font-mono">
@@ -129,7 +162,7 @@ export function NotificationBell() {
       </div>
 
       {/* Bell Icon Widget */}
-      <div className="relative">
+      <div className="relative" ref={dropdownRef}>
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
@@ -147,7 +180,7 @@ export function NotificationBell() {
         {/* Notifications Dropdown Drawer */}
         {isOpen ? (
           <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-paper border border-paper-line shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="p-3.5 border-b border-paper-line flex items-center justify-between bg-paper-tint">
+            <div className="p-3.5 border-b border-paper-line flex items-center justify-between bg-paper-raised">
               <h3 className="font-display font-semibold text-sm text-ink">Notifications</h3>
               {unreadCount > 0 ? (
                 <button
@@ -168,7 +201,7 @@ export function NotificationBell() {
                   <div
                     key={n.id}
                     className={`p-3 text-xs flex items-start justify-between gap-2 transition-colors ${
-                      n.is_read ? "bg-paper/40" : "bg-forest-tint/30 font-medium"
+                      n.is_read ? "bg-paper/40" : "bg-forest-tint/40 font-medium"
                     }`}
                   >
                     <div className="space-y-1">
@@ -190,6 +223,16 @@ export function NotificationBell() {
                   </div>
                 ))
               )}
+            </div>
+
+            <div className="p-2.5 border-t border-paper-line bg-paper-raised text-center">
+              <Link
+                href="/notifications"
+                onClick={() => setIsOpen(false)}
+                className="text-xs font-medium text-forest hover:underline inline-flex items-center gap-1"
+              >
+                View all notification history <ExternalLink className="h-3 w-3" />
+              </Link>
             </div>
           </div>
         ) : null}
