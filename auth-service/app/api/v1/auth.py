@@ -8,6 +8,9 @@ from app.api.deps import (
     get_current_user,
     get_email_verification_service,
 )
+from app.config.settings import get_settings
+from app.core.exceptions import AuthServiceError
+from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
     PasswordResetConfirm,
@@ -16,7 +19,9 @@ from app.schemas.auth import (
     ResendVerificationRequest,
     VerifyEmailRequest,
 )
-from app.config.settings import get_settings
+from app.schemas.token import TokenResponse
+from app.schemas.user import UserCreate, UserResponse
+from app.services.auth_service import AuthService
 from app.services.email_verification_service import EmailVerificationService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
