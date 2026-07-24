@@ -46,6 +46,33 @@ class EmailVerificationService:
 
         await self.db.commit()
 
+        # Send verification token notification via notification-service
+        try:
+            import logging
+            import httpx
+            from app.config.settings import get_settings
+
+            logger = logging.getLogger("auth-service.verification")
+            settings = get_settings()
+
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                await client.post(
+                    f"{settings.NOTIFICATION_SERVICE_URL}/api/v1/notifications/schedule",
+                    headers={"X-Internal-API-Key": settings.INTERNAL_SERVICE_API_KEY},
+                    json={
+                        "source": "auth",
+                        "source_reference_id": f"email-verify-{user.id}-{int(datetime.now(timezone.utc).timestamp())}",
+                        "user_id": str(user.id),
+                        "scheduled_for": datetime.now(timezone.utc).isoformat(),
+                        "message": f"Welcome to Todotak! Your email verification token is: {token}",
+                    },
+                )
+        except Exception as exc:
+            import logging
+            logging.getLogger("auth-service.verification").warning(
+                "Failed to dispatch verification email notification: %s", exc
+            )
+
         return token
 
     async def verify_email(

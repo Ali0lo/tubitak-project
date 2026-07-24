@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     # Guards internal, service-to-service-only endpoints such as the
     # user lookup notification-service uses to resolve an email address.
     INTERNAL_SERVICE_API_KEY: str
+    NOTIFICATION_SERVICE_URL: str = "http://notification-service:8000"
 
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
