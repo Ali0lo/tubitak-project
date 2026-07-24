@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateTask } from "@/hooks/use-tasks";
 import { localInputToIso } from "@/lib/utils";
-import type { TaskPriority } from "@/types";
+import type { TaskPriority, RecurrenceFrequency } from "@/types";
 
 interface TaskFormDialogProps {
   open: boolean;
@@ -22,6 +22,13 @@ export function TaskFormDialog({ open, onClose }: TaskFormDialogProps) {
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [tagsInput, setTagsInput] = useState("");
+
+  // Recurrence
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<RecurrenceFrequency>("daily");
+  const [intervalVal, setIntervalVal] = useState(1);
+  const [customUnit, setCustomUnit] = useState("days");
+
   const createTask = useCreateTask();
 
   const resetAndClose = () => {
@@ -30,6 +37,10 @@ export function TaskFormDialog({ open, onClose }: TaskFormDialogProps) {
     setPriority("medium");
     setDueDate("");
     setTagsInput("");
+    setIsRecurring(false);
+    setFrequency("daily");
+    setIntervalVal(1);
+    setCustomUnit("days");
     onClose();
   };
 
@@ -45,6 +56,14 @@ export function TaskFormDialog({ open, onClose }: TaskFormDialogProps) {
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
+        is_recurring: isRecurring,
+        recurrence_rule: isRecurring
+          ? {
+              frequency,
+              interval: Number(intervalVal),
+              unit: frequency === "custom" ? customUnit : "days",
+            }
+          : undefined,
       },
       { onSuccess: resetAndClose }
     );
@@ -117,6 +136,69 @@ export function TaskFormDialog({ open, onClose }: TaskFormDialogProps) {
             />
           </div>
         </div>
+
+        {/* Recurrence Section */}
+        <div className="p-3 bg-paper-tint border border-paper-line rounded-md space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_recurring"
+              checked={isRecurring}
+              onChange={(e) => setIsRecurring(e.target.checked)}
+              className="h-4 w-4 rounded border-paper-line text-forest focus:ring-forest"
+            />
+            <label htmlFor="is_recurring" className="text-sm font-medium text-ink cursor-pointer">
+              Recurring Task
+            </label>
+          </div>
+
+          {isRecurring ? (
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="mb-1 block text-xs text-ink-muted">Frequency</label>
+                <Select
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value as RecurrenceFrequency)}
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekdays_only">Weekdays only</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Biweekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                  <option value="custom">Custom interval</option>
+                </Select>
+              </div>
+
+              {frequency === "custom" ? (
+                <div className="flex gap-2">
+                  <div className="w-1/2">
+                    <label className="mb-1 block text-xs text-ink-muted">Interval</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={intervalVal}
+                      onChange={(e) => setIntervalVal(Number(e.target.value))}
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <label className="mb-1 block text-xs text-ink-muted">Unit</label>
+                    <Select
+                      value={customUnit}
+                      onChange={(e) => setCustomUnit(e.target.value)}
+                    >
+                      <option value="days">Days</option>
+                      <option value="weeks">Weeks</option>
+                      <option value="months">Months</option>
+                      <option value="years">Years</option>
+                    </Select>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
         <div>
           <label
             htmlFor="task_tags"

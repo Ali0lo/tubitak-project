@@ -98,6 +98,83 @@ class ReminderRepository:
         await self.db.refresh(reminder)
         return reminder
 
+    async def get_task_reminder_metadata(
+        self, task_ids: List[uuid.UUID], now: datetime
+    ) -> dict:
+        if not task_ids:
+            return {}
+        
+        # Next upcoming unsent reminder
+        next_stmt = (
+            select(Reminder.task_id, func.min(Reminder.remind_at))
+            .where(
+                Reminder.task_id.in_(task_ids),
+                Reminder.is_sent.is_(False),
+                Reminder.remind_at >= now,
+            )
+            .group_by(Reminder.task_id)
+        )
+        next_res = await self.db.execute(next_stmt)
+        next_map = {row[0]: row[1] for row in next_res.all()}
+
+        # Last sent notification
+        last_stmt = (
+            select(Reminder.task_id, func.max(Reminder.remind_at))
+            .where(
+                Reminder.task_id.in_(task_ids),
+                Reminder.is_sent.is_(True),
+            )
+            .group_by(Reminder.task_id)
+        )
+        last_res = await self.db.execute(last_stmt)
+        last_map = {row[0]: row[1] for row in last_res.all()}
+
+        return {
+            tid: {
+                "next_reminder_at": next_map.get(tid),
+                "last_notification_sent": last_map.get(tid),
+            }
+            for tid in task_ids
+        }
+
+    async def get_meeting_reminder_metadata(
+        self, meeting_ids: List[uuid.UUID], now: datetime
+    ) -> dict:
+        if not meeting_ids:
+            return {}
+
+        next_stmt = (
+            select(Reminder.meeting_id, func.min(Reminder.remind_at))
+            .where(
+                Reminder.meeting_id.in_(meeting_ids),
+                Reminder.is_sent.is_(False),
+                Reminder.remind_at >= now,
+            )
+            .group_by(Reminder.meeting_id)
+        )
+        next_res = await self.db.execute(next_stmt)
+        next_map = {row[0]: row[1] for row in next_res.all()}
+
+        last_stmt = (
+            select(Reminder.meeting_id, func.max(Reminder.remind_at))
+            .where(
+                Reminder.meeting_id.in_(meeting_ids),
+                Reminder.is_sent.is_(True),
+            )
+            .group_by(Reminder.meeting_id)
+        )
+        last_res = await self.db.execute(last_stmt)
+        last_map = {row[0]: row[1] for row in last_res.all()}
+
+        return {
+            mid: {
+                "next_reminder_at": next_map.get(mid),
+                "last_notification_sent": last_map.get(mid),
+            }
+            for mid in meeting_ids
+        }
+
     async def delete(self, reminder: Reminder) -> None:
         await self.db.delete(reminder)
         await self.db.flush()
+

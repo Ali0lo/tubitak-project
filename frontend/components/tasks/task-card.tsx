@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, Repeat, AlertCircle, Clock } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { useDeleteTask, useUpdateTask } from "@/hooks/use-tasks";
@@ -61,21 +61,40 @@ export function TaskCard({ task }: TaskCardProps) {
       />
 
       <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "ledger-title",
-            isCompleted && "text-ink-faint line-through"
-          )}
-        >
-          {task.title}
-        </p>
+        <div className="flex items-center gap-2">
+          <p
+            className={cn(
+              "ledger-title",
+              isCompleted && "text-ink-faint line-through"
+            )}
+          >
+            {task.title}
+          </p>
+          {task.is_recurring ? (
+            <span title="Recurring task">
+              <Repeat className="h-3.5 w-3.5 text-forest" />
+            </span>
+          ) : null}
+        </div>
+
         {task.description ? (
           <p className="mt-0.5 line-clamp-1 text-sm text-ink-muted">
             {task.description}
           </p>
         ) : null}
+
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <Badge tone={priorityTone[task.priority]}>{task.priority}</Badge>
+          {task.is_overdue ? (
+            <Badge tone="brick" className="flex items-center gap-1 bg-red-100 text-red-800 border-red-300">
+              <AlertCircle className="h-3 w-3" /> Overdue ({task.overdue_duration})
+            </Badge>
+          ) : null}
+          {task.next_reminder_at ? (
+            <Badge tone="neutral" className="flex items-center gap-1 text-[10px]">
+              <Clock className="h-3 w-3 text-sky-600" /> Reminder set
+            </Badge>
+          ) : null}
           {task.tags.map((tag) => (
             <Badge key={tag.id} tone="neutral">
               #{tag.name}

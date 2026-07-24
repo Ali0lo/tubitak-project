@@ -65,8 +65,25 @@ class NotificationService:
         return notification
 
     async def list_for_user(
-        self, user_id: uuid.UUID, *, offset: int, limit: int
+        self, user_id: uuid.UUID, *, offset: int, limit: int, unread_only: bool = False
     ) -> Tuple[List[Notification], int]:
         return await self.notifications.list_for_user(
-            user_id, offset=offset, limit=limit
+            user_id, offset=offset, limit=limit, unread_only=unread_only
         )
+
+    async def get_unread_count(self, user_id: uuid.UUID) -> int:
+        return await self.notifications.get_unread_count(user_id)
+
+    async def mark_as_read(
+        self, user_id: uuid.UUID, notification_id: uuid.UUID
+    ) -> Notification:
+        notification = await self.get_for_user(user_id, notification_id)
+        now = datetime.now(timezone.utc)
+        updated = await self.notifications.mark_as_read(notification, now)
+        await self.db.commit()
+        return updated
+
+    async def mark_all_as_read(self, user_id: uuid.UUID) -> int:
+        now = datetime.now(timezone.utc)
+        return await self.notifications.mark_all_as_read(user_id, now)
+

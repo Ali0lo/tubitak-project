@@ -62,12 +62,13 @@ async def cancel_notification(
 async def list_notifications(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
+    unread_only: bool = Query(default=False),
     user_id: uuid.UUID = Depends(get_current_user_id),
     notification_service: NotificationService = Depends(get_notification_service),
 ) -> PageResponse[NotificationResponse]:
     offset = (page - 1) * page_size
     items, total = await notification_service.list_for_user(
-        user_id, offset=offset, limit=page_size
+        user_id, offset=offset, limit=page_size, unread_only=unread_only
     )
     return PageResponse[NotificationResponse](
         items=[NotificationResponse.model_validate(n) for n in items],
@@ -76,6 +77,24 @@ async def list_notifications(
         page_size=page_size,
         total_pages=max(1, math.ceil(total / page_size)),
     )
+
+
+@router.get("/unread-count", response_model=dict)
+async def get_unread_count(
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    notification_service: NotificationService = Depends(get_notification_service),
+) -> dict:
+    count = await notification_service.get_unread_count(user_id)
+    return {"unread_count": count}
+
+
+@router.post("/read-all", response_model=dict)
+async def mark_all_as_read(
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    notification_service: NotificationService = Depends(get_notification_service),
+) -> dict:
+    updated_count = await notification_service.mark_all_as_read(user_id)
+    return {"marked_read": updated_count}
 
 
 @router.get("/{notification_id}", response_model=NotificationResponse)
@@ -93,3 +112,21 @@ async def get_notification(
             status_code=exc.status_code, detail=exc.message
         ) from exc
     return NotificationResponse.model_validate(notification)
+
+
+@router.patch("/{notification_id}/read", response_model=NotificationResponse)
+async def mark_as_read(
+    notification_id: uuid.UUID,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    notification_service: NotificationService = Depends(get_notification_service),
+) -> NotificationResponse:
+    try:
+        notification = await notification_service.mark_as_read(
+            user_id, notification_id
+        )
+    except NotificationServiceError as exc:
+        raise HTTPException(
+            status_code=exc.status_code, detail=exc.message
+        ) from exc
+    return NotificationResponse.model_validate(notification)
+

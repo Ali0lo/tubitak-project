@@ -25,6 +25,10 @@ class MeetingService:
         self.meetings = MeetingRepository(db)
         self.reminder_service = ReminderService(db)
 
+    async def get_reminder_metadata(self, meeting_ids: List[uuid.UUID]) -> dict:
+        now = datetime.now(timezone.utc)
+        return await self.reminder_service.reminders.get_meeting_reminder_metadata(meeting_ids, now)
+
     async def create_meeting(
         self, user_id: uuid.UUID, payload: MeetingCreate
     ) -> Meeting:

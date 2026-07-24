@@ -49,7 +49,7 @@ TOOL_DEFINITIONS: List[dict] = [
         "type": "function",
         "function": {
             "name": "list_tasks",
-            "description": "List the user's tasks, optionally filtered by status, priority, or tag.",
+            "description": "List the user's tasks, optionally filtered by status, priority, tag, overdue, today, upcoming, or recurring.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -62,6 +62,49 @@ TOOL_DEFINITIONS: List[dict] = [
                         "enum": ["low", "medium", "high", "urgent"],
                     },
                     "tag": {"type": "string"},
+                    "overdue": {"type": "boolean", "description": "Set to true to show overdue tasks only."},
+                    "today": {"type": "boolean", "description": "Set to true to show tasks due today."},
+                    "upcoming": {"type": "boolean", "description": "Set to true to show upcoming tasks."},
+                    "recurring": {"type": "boolean", "description": "Set to true to show recurring tasks."},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "bulk_reschedule_overdue_tasks",
+            "description": "Bulk reschedule overdue tasks to a new due date.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "new_due_date": {
+                        "type": "string",
+                        "description": "Target ISO 8601 datetime, e.g., tomorrow 09:00.",
+                    },
+                    "task_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional list of task UUIDs to reschedule. If omitted, reschedules all overdue tasks.",
+                    },
+                },
+                "required": ["new_due_date"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "bulk_complete_overdue_tasks",
+            "description": "Bulk mark overdue tasks as completed.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional list of task UUIDs to complete. If omitted, completes all overdue tasks.",
+                    },
                 },
             },
         },
@@ -148,7 +191,7 @@ TOOL_DEFINITIONS: List[dict] = [
         "type": "function",
         "function": {
             "name": "list_meetings",
-            "description": "List the user's meetings, optionally filtered by status or time range.",
+            "description": "List the user's meetings, optionally filtered by status, time range, overdue, missed, today, or upcoming.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -158,6 +201,10 @@ TOOL_DEFINITIONS: List[dict] = [
                     },
                     "starts_after": {"type": "string"},
                     "starts_before": {"type": "string"},
+                    "overdue": {"type": "boolean", "description": "Set to true for overdue meetings."},
+                    "missed": {"type": "boolean", "description": "Set to true for missed meetings."},
+                    "today": {"type": "boolean", "description": "Set to true for meetings today."},
+                    "upcoming": {"type": "boolean", "description": "Set to true for upcoming meetings."},
                 },
             },
         },

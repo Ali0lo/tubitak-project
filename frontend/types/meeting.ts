@@ -21,9 +21,18 @@ export interface Meeting {
   start_time: string;
   end_time: string;
   status: MeetingStatus;
+  is_recurring?: boolean;
+  recurrence_rule?: any;
   created_at: string;
   updated_at: string;
   participants: Participant[];
+
+  // Computed overdue & reminder fields
+  is_overdue?: boolean;
+  overdue_since?: string | null;
+  overdue_duration?: string | null;
+  next_reminder_at?: string | null;
+  last_notification_sent?: string | null;
 }
 
 export interface ParticipantInput {
@@ -48,3 +57,14 @@ export interface MeetingUpdateInput {
   end_time?: string;
   status?: MeetingStatus;
 }
+
+export interface MeetingFilters {
+  status?: MeetingStatus;
+  starts_after?: string;
+  starts_before?: string;
+  overdue?: boolean;
+  missed?: boolean;
+  today?: boolean;
+  upcoming?: boolean;
+}
+

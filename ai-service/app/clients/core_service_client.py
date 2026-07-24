@@ -99,6 +99,10 @@ class CoreServiceClient:
         status: Optional[str] = None,
         priority: Optional[str] = None,
         tag: Optional[str] = None,
+        overdue: Optional[bool] = None,
+        today: Optional[bool] = None,
+        upcoming: Optional[bool] = None,
+        recurring: Optional[bool] = None,
         page: int = 1,
         page_size: int = 20,
     ) -> dict:
@@ -109,8 +113,41 @@ class CoreServiceClient:
             params["priority"] = priority
         if tag is not None:
             params["tag"] = tag
+        if overdue is not None:
+            params["overdue"] = overdue
+        if today is not None:
+            params["today"] = today
+        if upcoming is not None:
+            params["upcoming"] = upcoming
+        if recurring is not None:
+            params["recurring"] = recurring
         return await self._request(
             "GET", "/api/v1/tasks", access_token, params=params
+        )
+
+    async def bulk_reschedule_overdue_tasks(
+        self,
+        access_token: str,
+        *,
+        new_due_date: str,
+        task_ids: Optional[List[str]] = None,
+    ) -> dict:
+        payload: dict = {"new_due_date": new_due_date}
+        if task_ids:
+            payload["task_ids"] = task_ids
+        return await self._request(
+            "POST", "/api/v1/tasks/overdue/reschedule", access_token, json=payload
+        )
+
+    async def bulk_complete_overdue_tasks(
+        self,
+        access_token: str,
+        *,
+        task_ids: Optional[List[str]] = None,
+    ) -> dict:
+        payload = {"task_ids": task_ids} if task_ids else None
+        return await self._request(
+            "POST", "/api/v1/tasks/overdue/complete", access_token, json=payload
         )
 
     async def update_task(
@@ -161,6 +198,10 @@ class CoreServiceClient:
         status: Optional[str] = None,
         starts_after: Optional[str] = None,
         starts_before: Optional[str] = None,
+        overdue: Optional[bool] = None,
+        missed: Optional[bool] = None,
+        today: Optional[bool] = None,
+        upcoming: Optional[bool] = None,
     ) -> dict:
         params: dict = {}
         if status is not None:
@@ -169,6 +210,14 @@ class CoreServiceClient:
             params["starts_after"] = starts_after
         if starts_before is not None:
             params["starts_before"] = starts_before
+        if overdue is not None:
+            params["overdue"] = overdue
+        if missed is not None:
+            params["missed"] = missed
+        if today is not None:
+            params["today"] = today
+        if upcoming is not None:
+            params["upcoming"] = upcoming
         return await self._request(
             "GET", "/api/v1/meetings", access_token, params=params
         )

@@ -46,6 +46,29 @@ async def _list_tasks(
         status=args.get("status"),
         priority=args.get("priority"),
         tag=args.get("tag"),
+        overdue=args.get("overdue"),
+        today=args.get("today"),
+        upcoming=args.get("upcoming"),
+        recurring=args.get("recurring"),
+    )
+
+
+async def _bulk_reschedule_overdue_tasks(
+    args: dict, ctx: ToolContext, client: CoreServiceClient
+) -> dict:
+    return await client.bulk_reschedule_overdue_tasks(
+        ctx.access_token,
+        new_due_date=args["new_due_date"],
+        task_ids=args.get("task_ids"),
+    )
+
+
+async def _bulk_complete_overdue_tasks(
+    args: dict, ctx: ToolContext, client: CoreServiceClient
+) -> dict:
+    return await client.bulk_complete_overdue_tasks(
+        ctx.access_token,
+        task_ids=args.get("task_ids"),
     )
 
 
@@ -93,6 +116,10 @@ async def _list_meetings(
         status=args.get("status"),
         starts_after=args.get("starts_after"),
         starts_before=args.get("starts_before"),
+        overdue=args.get("overdue"),
+        missed=args.get("missed"),
+        today=args.get("today"),
+        upcoming=args.get("upcoming"),
     )
 
 
@@ -132,6 +159,8 @@ async def _delete_reminder(
 TOOL_HANDLERS: Dict[str, ToolHandler] = {
     "create_task": _create_task,
     "list_tasks": _list_tasks,
+    "bulk_reschedule_overdue_tasks": _bulk_reschedule_overdue_tasks,
+    "bulk_complete_overdue_tasks": _bulk_complete_overdue_tasks,
     "update_task": _update_task,
     "delete_task": _delete_task,
     "create_meeting": _create_meeting,

@@ -36,7 +36,7 @@ def format_overdue_duration(diff_seconds: float) -> str:
     return f"{months} month{'s' if months > 1 else ''} overdue"
 
 
-def serialize_meeting(meeting: Meeting) -> MeetingResponse:
+def serialize_meeting(meeting: Meeting, reminder_meta: Optional[dict] = None) -> MeetingResponse:
     response = MeetingResponse.model_validate(meeting)
     now = datetime.now(timezone.utc)
 
@@ -45,6 +45,10 @@ def serialize_meeting(meeting: Meeting) -> MeetingResponse:
         response.overdue_since = meeting.end_time
         diff = (now - meeting.end_time).total_seconds()
         response.overdue_duration = format_overdue_duration(diff)
+
+    if reminder_meta:
+        response.next_reminder_at = reminder_meta.get("next_reminder_at")
+        response.last_notification_sent = reminder_meta.get("last_notification_sent")
 
     return response
 
@@ -62,11 +66,12 @@ async def create_meeting(
 ) -> MeetingResponse:
     try:
         meeting = await meeting_service.create_meeting(user_id, payload)
+        meta = await meeting_service.get_reminder_metadata([meeting.id])
     except CoreServiceError as exc:
         raise HTTPException(
             status_code=exc.status_code, detail=exc.message
         ) from exc
-    return serialize_meeting(meeting)
+    return serialize_meeting(meeting, meta.get(meeting.id))
 
 
 @router.get("", response_model=PageResponse[MeetingResponse])
@@ -96,8 +101,9 @@ async def list_meetings(
         today_only=today,
         upcoming_only=upcoming,
     )
+    meta = await meeting_service.get_reminder_metadata([m.id for m in items])
     return PageResponse[MeetingResponse](
-        items=[serialize_meeting(m) for m in items],
+        items=[serialize_meeting(m, meta.get(m.id)) for m in items],
         total=total,
         page=page,
         page_size=page_size,

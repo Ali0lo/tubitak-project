@@ -6,14 +6,10 @@ import { apiClient } from "@/lib/api-client";
 import type {
   Meeting,
   MeetingCreateInput,
-  MeetingStatus,
+  MeetingFilters,
   PageResponse,
   ParticipantResponseStatus,
 } from "@/types";
-
-interface MeetingFilters {
-  status?: MeetingStatus;
-}
 
 const meetingsKey = (filters: MeetingFilters = {}) =>
   ["meetings", filters] as const;
@@ -24,6 +20,12 @@ export function useMeetings(filters: MeetingFilters = {}) {
     queryFn: () =>
       apiClient.get<PageResponse<Meeting>>("/api/v1/meetings", {
         status: filters.status,
+        starts_after: filters.starts_after,
+        starts_before: filters.starts_before,
+        overdue: filters.overdue,
+        missed: filters.missed,
+        today: filters.today,
+        upcoming: filters.upcoming,
         page_size: 100,
       }),
   });

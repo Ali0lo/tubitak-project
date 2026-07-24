@@ -36,7 +36,7 @@ def format_overdue_duration(diff_seconds: float) -> str:
     return f"{months} month{'s' if months > 1 else ''} overdue"
 
 
-def serialize_task(task: Task) -> TaskResponse:
+def serialize_task(task: Task, reminder_meta: Optional[dict] = None) -> TaskResponse:
     response = TaskResponse.model_validate(task)
     now = datetime.now(timezone.utc)
 
@@ -48,6 +48,10 @@ def serialize_task(task: Task) -> TaskResponse:
             diff = (now - task.due_date).total_seconds()
             response.overdue_duration = format_overdue_duration(diff)
             response.days_overdue = max(1, (now.date() - task.due_date.date()).days)
+
+    if reminder_meta:
+        response.next_reminder_at = reminder_meta.get("next_reminder_at")
+        response.last_notification_sent = reminder_meta.get("last_notification_sent")
 
     return response
 
@@ -63,11 +67,12 @@ async def create_task(
 ) -> TaskResponse:
     try:
         task = await task_service.create_task(user_id, payload)
+        meta = await task_service.get_reminder_metadata([task.id])
     except CoreServiceError as exc:
         raise HTTPException(
             status_code=exc.status_code, detail=exc.message
         ) from exc
-    return serialize_task(task)
+    return serialize_task(task, meta.get(task.id))
 
 
 @router.get("", response_model=PageResponse[TaskResponse])
@@ -101,8 +106,9 @@ async def list_tasks(
         upcoming_only=upcoming,
         recurring_only=recurring,
     )
+    meta = await task_service.get_reminder_metadata([t.id for t in items])
     return PageResponse[TaskResponse](
-        items=[serialize_task(t) for t in items],
+        items=[serialize_task(t, meta.get(t.id)) for t in items],
         total=total,
         page=page,
         page_size=page_size,

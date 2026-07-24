@@ -70,6 +70,10 @@ class TaskService:
         self.tasks = TaskRepository(db)
         self.reminder_service = ReminderService(db)
 
+    async def get_reminder_metadata(self, task_ids: List[uuid.UUID]) -> dict:
+        now = datetime.now(timezone.utc)
+        return await self.reminder_service.reminders.get_task_reminder_metadata(task_ids, now)
+
     async def create_task(self, user_id: uuid.UUID, payload: TaskCreate) -> Task:
         recurrence_dict = None
         if payload.is_recurring and payload.recurrence_rule:

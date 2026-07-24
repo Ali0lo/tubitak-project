@@ -21,6 +21,10 @@ export function useTasks(filters: TaskFilters = {}) {
         status: filters.status,
         priority: filters.priority,
         tag: filters.tag,
+        overdue: filters.overdue,
+        today: filters.today,
+        upcoming: filters.upcoming,
+        recurring: filters.recurring,
         page_size: 100,
       }),
   });
@@ -58,6 +62,37 @@ export function useDeleteTask() {
   return useMutation({
     mutationFn: (taskId: string) =>
       apiClient.delete<void>(`/api/v1/tasks/${taskId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useRescheduleOverdue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskIds,
+      newDueDate,
+    }: {
+      taskIds?: string[];
+      newDueDate: string;
+    }) =>
+      apiClient.post<Task[]>("/api/v1/tasks/overdue/reschedule", {
+        task_ids: taskIds,
+        new_due_date: newDueDate,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useCompleteOverdue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (taskIds?: string[]) =>
+      apiClient.post<Task[]>("/api/v1/tasks/overdue/complete", taskIds ? { task_ids: taskIds } : {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },

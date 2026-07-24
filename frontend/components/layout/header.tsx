@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { formatLongDate } from "@/lib/utils";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 interface HeaderProps {
   title: string;
@@ -19,12 +20,15 @@ export function Header({ title }: HeaderProps) {
           {formatLongDate(today)}
         </p>
       </div>
-      {user ? (
-        <div className="text-right">
-          <p className="text-sm text-ink">{user.full_name}</p>
-          <p className="font-mono text-xs text-ink-faint">{user.email}</p>
-        </div>
-      ) : null}
+      <div className="flex items-center gap-4">
+        <NotificationBell />
+        {user ? (
+          <div className="text-right border-l border-paper-line pl-4">
+            <p className="text-sm font-medium text-ink">{user.full_name}</p>
+            <p className="font-mono text-xs text-ink-faint">{user.email}</p>
+          </div>
+        ) : null}
+      </div>
     </header>
   );
 }
