@@ -19,6 +19,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { useAuth } from "@/hooks/use-auth";
 import {
   useTasks,
   useUpdateTask,
@@ -44,6 +45,8 @@ const priorityToneMap: Record<TaskPriority, "low" | "medium" | "high" | "urgent"
 };
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const userName = user?.full_name?.trim().split(" ")[0] || user?.full_name || undefined;
   const [rescheduleDateMap, setRescheduleDateMap] = useState<Record<string, string>>({});
 
   const { data: tasksData, isLoading: tasksLoading } = useTasks();
@@ -173,7 +176,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         {/* 1. AI Daily Summary Header */}
         <AIDailySummary
-          userName="Ali"
+          userName={userName}
           tasks={allTasks}
           meetings={allMeetings}
           onCompleteTask={handleQuickComplete}

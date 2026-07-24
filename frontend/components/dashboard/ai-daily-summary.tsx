@@ -16,7 +16,7 @@ interface AIDailySummaryProps {
 }
 
 export function AIDailySummary({
-  userName = "Ali",
+  userName,
   tasks,
   meetings,
   onCompleteTask,
@@ -25,6 +25,7 @@ export function AIDailySummary({
 
   const today = useMemo(() => new Date(), []);
   const hour = today.getHours();
+  const displayName = userName?.trim();
 
   const greeting = useMemo(() => {
     if (hour < 12) return "Good morning";
@@ -122,7 +123,7 @@ export function AIDailySummary({
 
         {/* Greeting */}
         <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-white">
-          {greeting}, {userName}.
+          {greeting}{displayName ? `, ${displayName}` : ""}.
         </h1>
 
         <p className="text-slate-300 text-sm font-medium">You have:</p>
