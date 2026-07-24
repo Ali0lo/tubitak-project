@@ -50,10 +50,10 @@ class User(Base):
     password_reset_tokens: Mapped[List["PasswordResetToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    email_verification_tokens: Mapped[List["EmailVerificationToken"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email!r}>"
-email_verification_tokens: Mapped[List["EmailVerificationToken"]] = relationship(
-    back_populates="user",
-    cascade="all, delete-orphan",
-)
