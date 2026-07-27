@@ -10,6 +10,8 @@ import { Meeting } from "@/types/meeting";
 import { useUpdateTask } from "@/hooks/use-tasks";
 import { extractMeetingUrl } from "@/lib/utils";
 
+import { PixelSleepingCat, PixelSparkle } from "@/components/ui/pixel-art";
+
 interface TodayTimelineProps {
   tasks: Task[];
   meetings: Meeting[];
@@ -109,8 +111,14 @@ export function TodayTimeline({ tasks, meetings }: TodayTimelineProps) {
       </div>
 
       {timelineItems.length === 0 ? (
-        <div className="py-8 text-center text-xs text-ink-muted italic">
-          No schedule items or tasks set for today. Enjoy your clear day!
+        <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
+          <PixelSleepingCat size={42} />
+          <p className="text-xs font-medium text-ink flex items-center gap-1 mt-1">
+            No schedule items set for today <PixelSparkle size={12} />
+          </p>
+          <p className="text-[11px] text-ink-muted italic">
+            Enjoy your clear day and cozy moments!
+          </p>
         </div>
       ) : (
         <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-paper-line">

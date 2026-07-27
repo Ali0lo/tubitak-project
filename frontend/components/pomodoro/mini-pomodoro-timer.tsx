@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { Play, Pause, Timer, Flame } from "lucide-react";
+import { Play, Pause } from "lucide-react";
 import { usePomodoroStore } from "@/stores/pomodoro-store";
 import { cn } from "@/lib/utils";
+import { PixelTomato, PixelCoffeeCup, PixelSparkle } from "@/components/ui/pixel-art";
 
 export function MiniPomodoroTimer() {
   const {
@@ -58,14 +59,18 @@ export function MiniPomodoroTimer() {
         )}
         title="Open Pomodoro Focus Timer"
       >
-        <Timer className={cn("h-3.5 w-3.5 shrink-0", isRunning && "animate-spin-slow")} />
+        {mode === "work" ? (
+          <PixelTomato size={16} />
+        ) : (
+          <PixelCoffeeCup size={16} />
+        )}
         <span className="font-bold">{formatMinutesSeconds(timeLeft)}</span>
         <span className="hidden sm:inline-mono text-[10px] opacity-75 uppercase">
           {mode === "work" ? "Focus" : "Break"}
         </span>
         {completedPomodoros > 0 ? (
           <span className="flex items-center gap-0.5 text-[11px] font-semibold text-amber font-sans">
-            <Flame className="h-3 w-3 fill-current text-amber" />
+            <PixelSparkle size={12} />
             {completedPomodoros}
           </span>
         ) : null}

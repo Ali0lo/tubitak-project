@@ -15,6 +15,7 @@ import { usePathname } from "next/navigation";
 import { useLogout } from "@/hooks/use-auth";
 import { useUnreadNotificationCount } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
+import { PixelCatMascot, PixelMascotSidebarWidget } from "@/components/ui/pixel-art";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,11 +34,16 @@ export function Sidebar() {
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col bg-forest-dark dark:bg-paper-raised dark:border-r dark:border-paper-line text-paper transition-colors duration-200">
-      <div className="border-b border-paper/10 dark:border-paper-line px-5 py-6">
-        <p className="font-display text-xl leading-none">Todotak</p>
-        <p className="mt-1 font-mono text-[11px] uppercase tracking-widest text-paper/50 dark:text-ink-muted">
-          your day, kept
-        </p>
+      <div className="border-b border-paper/10 dark:border-paper-line px-5 py-5 flex items-center gap-3">
+        <PixelCatMascot size={26} />
+        <div>
+          <p className="font-display text-xl leading-none flex items-center gap-1">
+            Todotak
+          </p>
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-paper/50 dark:text-ink-muted">
+            your day, kept
+          </p>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
@@ -68,7 +74,9 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-paper/10 dark:border-paper-line px-3 py-4">
+      <PixelMascotSidebarWidget />
+
+      <div className="border-t border-paper/10 dark:border-paper-line px-3 py-3">
         <button
           type="button"
           onClick={() => logout.mutate()}

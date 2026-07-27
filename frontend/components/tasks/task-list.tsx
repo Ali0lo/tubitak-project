@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { TaskCard } from "@/components/tasks/task-card";
 import { useTasks } from "@/hooks/use-tasks";
+import { PixelCatMascot, PixelSparkle } from "@/components/ui/pixel-art";
 import type { TaskFilters } from "@/types";
 
 interface TaskListProps {
@@ -36,11 +37,12 @@ export function TaskList({ filters }: TaskListProps) {
   if (!data || data.items.length === 0) {
     return (
       <Card>
-        <CardContent className="py-10 text-center">
-          <p className="font-display text-lg text-ink">
-            Nothing on the ledger yet
+        <CardContent className="py-10 text-center flex flex-col items-center justify-center gap-2">
+          <PixelCatMascot size={36} />
+          <p className="font-display text-lg text-ink flex items-center gap-1.5 mt-1">
+            Nothing on the ledger yet <PixelSparkle size={14} />
           </p>
-          <p className="mt-1 text-sm text-ink-muted">
+          <p className="text-sm text-ink-muted">
             Add a task, or tell the assistant what you need to do.
           </p>
         </CardContent>
