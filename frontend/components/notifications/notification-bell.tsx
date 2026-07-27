@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Bell, Check, CheckCheck, ExternalLink, X } from "lucide-react";
+import { Bell, Check, CheckCheck, ExternalLink, Video, X } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -19,6 +19,50 @@ export interface NotificationItem {
   is_read: boolean;
   read_at: string | null;
   created_at: string;
+}
+
+/**
+ * Filters notifications to find ONLY upcoming meeting reminders starting soon.
+ * - Must be a meeting notification (source === 'meeting' or message contains 'meeting').
+ * - Scheduled time must be in the immediate near future (starting within 15 minutes: diffMinutes >= -2 && diffMinutes <= 15).
+ * - Excludes stale notifications (e.g. 45-min reminder scheduled 30 min ago, or past notifications).
+ * - Returns ONLY the single most immediate upcoming meeting reminder.
+ */
+export function filterUpcomingMeetingPopups(
+  items: NotificationItem[],
+  seenIds: Set<string>,
+  now: Date = new Date()
+): NotificationItem[] {
+  const nowMs = now.getTime();
+
+  const qualifyingMeetings = items.filter((item) => {
+    if (item.is_read || seenIds.has(item.id)) return false;
+
+    const isMeeting =
+      item.source === "meeting" ||
+      item.message.toLowerCase().includes("meeting");
+    if (!isMeeting) return false;
+
+    const scheduledMs = new Date(item.scheduled_for).getTime();
+    if (isNaN(scheduledMs)) return false;
+
+    const diffMinutes = (scheduledMs - nowMs) / 60000;
+
+    // Only allow reminders for meetings starting within the next 15 minutes (or up to 2 minutes past start time)
+    return diffMinutes >= -2 && diffMinutes <= 15;
+  });
+
+  if (qualifyingMeetings.length === 0) return [];
+
+  // Sort by closest time to now to get the most immediate/recent upcoming meeting
+  qualifyingMeetings.sort((a, b) => {
+    const diffA = Math.abs(new Date(a.scheduled_for).getTime() - nowMs);
+    const diffB = Math.abs(new Date(b.scheduled_for).getTime() - nowMs);
+    return diffA - diffB;
+  });
+
+  const closest = qualifyingMeetings[0];
+  return closest ? [closest] : [];
 }
 
 export function NotificationBell() {
@@ -63,33 +107,36 @@ export function NotificationBell() {
       setNotifications(items);
       setUnreadCount(countRes.unread_count || 0);
 
-      // Check for new unread notifications that haven't been shown as toast popups yet
-      const newToasts: NotificationItem[] = [];
-      const currentSeen = seenToastIdsRef.current;
+      // Filter for exclusively upcoming meeting reminders starting within 15 mins
+      const qualifyingMeetingToasts = filterUpcomingMeetingPopups(
+        items,
+        seenToastIdsRef.current
+      );
 
-      items.forEach((item) => {
-        if (!item.is_read && !currentSeen.has(item.id)) {
-          currentSeen.add(item.id);
-          newToasts.push(item);
+      if (qualifyingMeetingToasts.length > 0 && qualifyingMeetingToasts[0]) {
+        const meetingToast = qualifyingMeetingToasts[0];
+        seenToastIdsRef.current.add(meetingToast.id);
 
-          // Trigger native Web Notification popup if allowed
-          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-            try {
-              new Notification("Todotak Reminder Alert", {
-                body: item.message,
-                icon: "/favicon.ico",
-              });
-            } catch (e) {
-              // Ignore native notification errors
-            }
+        // Show only the single most immediate upcoming meeting toast popup
+        setToastQueue([meetingToast]);
+
+        // Trigger native Web Notification popup for meeting if allowed
+        if (
+          typeof window !== "undefined" &&
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
+          try {
+            new Notification("Upcoming Meeting Reminder", {
+              body: meetingToast.message,
+              icon: "/favicon.ico",
+            });
+          } catch {
+            // Ignore native notification errors
           }
         }
-      });
-
-      if (newToasts.length > 0) {
-        setToastQueue((prev) => [...prev, ...newToasts]);
       }
-    } catch (e) {
+    } catch {
       // Ignore poll errors
     }
   };
@@ -104,7 +151,7 @@ export function NotificationBell() {
     try {
       await apiClient.patch(`/api/v1/notifications/${id}/read`);
       fetchNotifications();
-    } catch (e) {
+    } catch {
       // Ignore error
     }
   };
@@ -113,7 +160,7 @@ export function NotificationBell() {
     try {
       await apiClient.post("/api/v1/notifications/read-all");
       fetchNotifications();
-    } catch (e) {
+    } catch {
       // Ignore error
     }
   };
@@ -122,38 +169,39 @@ export function NotificationBell() {
     setToastQueue((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Auto-dismiss first toast after 6 seconds
+  // Auto-dismiss meeting toast after 8 seconds
   useEffect(() => {
     if (toastQueue.length > 0) {
       const timer = setTimeout(() => {
-        setToastQueue((prev) => prev.slice(1));
-      }, 6000);
+        setToastQueue([]);
+      }, 8000);
       return () => clearTimeout(timer);
     }
   }, [toastQueue]);
 
   return (
     <>
-      {/* Floating In-App Toast Popups */}
+      {/* Floating In-App Toast Popup - Exclusively for Imminent Upcoming Meetings */}
       <div className="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
         {toastQueue.map((toast) => (
           <div
             key={toast.id}
-            className="pointer-events-auto p-4 rounded-xl bg-ink text-paper shadow-2xl border border-paper-line/20 flex items-start justify-between gap-3 animate-in slide-in-from-top-5 duration-300"
+            className="pointer-events-auto p-4 rounded-xl bg-ink text-paper shadow-2xl border border-sky-500/30 flex items-start justify-between gap-3 animate-in slide-in-from-top-5 duration-300"
           >
             <div className="space-y-1">
-              <p className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold flex items-center gap-1">
-                <Bell className="h-3 w-3 inline" /> Reminder Alert
+              <p className="text-xs font-mono uppercase tracking-wider text-sky-400 font-semibold flex items-center gap-1.5">
+                <Video className="h-3.5 w-3.5 inline text-sky-400" /> Upcoming Meeting Reminder
               </p>
               <p className="text-sm font-medium">{toast.message}</p>
               <p className="text-[10px] text-paper-muted font-mono">
-                {format(new Date(toast.scheduled_for), "HH:mm")}
+                Scheduled for {format(new Date(toast.scheduled_for), "HH:mm")}
               </p>
             </div>
             <button
               type="button"
               onClick={() => dismissToast(toast.id)}
               className="text-paper-muted hover:text-paper p-1"
+              title="Dismiss popup"
             >
               <X className="h-4 w-4" />
             </button>
