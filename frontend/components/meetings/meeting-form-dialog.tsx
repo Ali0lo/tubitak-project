@@ -27,6 +27,7 @@ export function MeetingFormDialog({ open, onClose }: MeetingFormDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [meetingLink, setMeetingLink] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [participantsInput, setParticipantsInput] = useState("");
@@ -37,6 +38,7 @@ export function MeetingFormDialog({ open, onClose }: MeetingFormDialogProps) {
     setTitle("");
     setDescription("");
     setLocation("");
+    setMeetingLink("");
     setStartTime("");
     setEndTime("");
     setParticipantsInput("");
@@ -59,11 +61,18 @@ export function MeetingFormDialog({ open, onClose }: MeetingFormDialogProps) {
     }
     setValidationError(null);
 
+    const finalLocation = location.trim()
+      ? meetingLink.trim() && !location.includes(meetingLink.trim())
+        ? `${location.trim()} | ${meetingLink.trim()}`
+        : location.trim()
+      : meetingLink.trim() || undefined;
+
     createMeeting.mutate(
       {
         title,
         description: description || undefined,
-        location: location || undefined,
+        location: finalLocation,
+        meeting_link: meetingLink.trim() || undefined,
         start_time: startIso,
         end_time: endIso,
         participants: parseParticipants(participantsInput),
@@ -103,19 +112,36 @@ export function MeetingFormDialog({ open, onClose }: MeetingFormDialogProps) {
             onChange={(event) => setDescription(event.target.value)}
           />
         </div>
-        <div>
-          <label
-            htmlFor="meeting_location"
-            className="mb-1 block text-sm text-ink-muted"
-          >
-            Location
-          </label>
-          <Input
-            id="meeting_location"
-            value={location}
-            onChange={(event) => setLocation(event.target.value)}
-            placeholder="Zoom, Room 4B, ..."
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label
+              htmlFor="meeting_location"
+              className="mb-1 block text-sm text-ink-muted"
+            >
+              Location (optional)
+            </label>
+            <Input
+              id="meeting_location"
+              value={location}
+              onChange={(event) => setLocation(event.target.value)}
+              placeholder="Room 4B, Office, ..."
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="meeting_link"
+              className="mb-1 block text-sm font-medium text-forest dark:text-forest-light"
+            >
+              Join Call Link / URL (optional)
+            </label>
+            <Input
+              id="meeting_link"
+              type="url"
+              value={meetingLink}
+              onChange={(event) => setMeetingLink(event.target.value)}
+              placeholder="https://meet.google.com/..."
+            />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
