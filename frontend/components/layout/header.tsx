@@ -4,6 +4,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { formatLongDate } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { MiniPomodoroTimer } from "@/components/pomodoro/mini-pomodoro-timer";
+import { PomodoroModal } from "@/components/pomodoro/pomodoro-modal";
+import { PomodoroAlarmBanner } from "@/components/pomodoro/pomodoro-alarm-banner";
 
 interface HeaderProps {
   title: string;
@@ -22,6 +25,7 @@ export function Header({ title }: HeaderProps) {
         </p>
       </div>
       <div className="flex items-center gap-4">
+        <MiniPomodoroTimer />
         <ThemeToggle />
         <NotificationBell />
         {user ? (
@@ -31,6 +35,10 @@ export function Header({ title }: HeaderProps) {
           </div>
         ) : null}
       </div>
+
+      <PomodoroModal />
+      <PomodoroAlarmBanner />
     </header>
   );
 }
+

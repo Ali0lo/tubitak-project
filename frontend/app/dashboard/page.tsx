@@ -34,6 +34,7 @@ import { Meeting } from "@/types/meeting";
 import { AIDailySummary } from "@/components/dashboard/ai-daily-summary";
 import { StreakCard } from "@/components/dashboard/streak-card";
 import { MeetingCountdown } from "@/components/dashboard/meeting-countdown";
+import { PomodoroDashboardCard } from "@/components/dashboard/pomodoro-card";
 import { TodayTimeline } from "@/components/dashboard/today-timeline";
 import { AIWeeklySummary } from "@/components/dashboard/ai-weekly-summary";
 
@@ -182,10 +183,11 @@ export default function DashboardPage() {
           onCompleteTask={handleQuickComplete}
         />
 
-        {/* 2. Top Interactive Cards: Streak & Next Meeting Live Countdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* 2. Top Interactive Cards: Streak & Next Meeting Live Countdown & Pomodoro */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StreakCard tasks={allTasks} />
           <MeetingCountdown meetings={allMeetings} />
+          <PomodoroDashboardCard />
         </div>
 
         {/* 3. Metric Banner Cards */}
