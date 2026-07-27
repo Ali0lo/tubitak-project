@@ -4,7 +4,7 @@ import { Ban, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { useCancelMeeting, useDeleteMeeting } from "@/hooks/use-meetings";
-import { cn, formatDateLabel, formatTimestamp } from "@/lib/utils";
+import { cn, extractMeetingUrl, formatDateLabel, formatTimestamp } from "@/lib/utils";
 import type { Meeting, MeetingStatus } from "@/types";
 
 const statusTone: Record<
@@ -24,6 +24,7 @@ export function MeetingCard({ meeting }: MeetingCardProps) {
   const cancelMeeting = useCancelMeeting();
   const deleteMeeting = useDeleteMeeting();
   const isCancelled = meeting.status === "cancelled";
+  const joinUrl = extractMeetingUrl(meeting);
 
   return (
     <div className="ledger-line group px-5">
@@ -47,6 +48,16 @@ export function MeetingCard({ meeting }: MeetingCardProps) {
         ) : null}
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <Badge tone={statusTone[meeting.status]}>{meeting.status}</Badge>
+          {joinUrl && !isCancelled ? (
+            <a
+              href={joinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-forest/10 text-forest hover:bg-forest hover:text-white dark:bg-forest-light/20 dark:text-forest-light transition-colors"
+            >
+              Join Call ↗
+            </a>
+          ) : null}
           {meeting.participants.map((participant) => (
             <Badge key={participant.id} tone="neutral">
               {participant.name || participant.email}

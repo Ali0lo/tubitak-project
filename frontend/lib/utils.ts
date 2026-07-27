@@ -42,3 +42,28 @@ export function isoToLocalInput(iso: string | null | undefined): string {
   const local = new Date(date.getTime() - offset * 60_000);
   return local.toISOString().slice(0, 16);
 }
+
+/** Extracts and formats a valid Join Call URL from meeting_link or location. */
+export function extractMeetingUrl(meeting: {
+  meeting_link?: string | null;
+  location?: string | null;
+}): string | null {
+  if (meeting.meeting_link && meeting.meeting_link.trim()) {
+    const link = meeting.meeting_link.trim();
+    if (link.startsWith("http://") || link.startsWith("https://")) {
+      return link;
+    }
+    return `https://${link}`;
+  }
+
+  if (meeting.location && meeting.location.trim()) {
+    const loc = meeting.location.trim();
+    const urlMatch = loc.match(/https?:\/\/[^\s]+/i);
+    if (urlMatch) {
+      return urlMatch[0];
+    }
+  }
+
+  return null;
+}
+

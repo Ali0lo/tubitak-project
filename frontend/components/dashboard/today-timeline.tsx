@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task, TaskPriority } from "@/types/task";
 import { Meeting } from "@/types/meeting";
 import { useUpdateTask } from "@/hooks/use-tasks";
+import { extractMeetingUrl } from "@/lib/utils";
 
 interface TodayTimelineProps {
   tasks: Task[];
@@ -58,7 +59,7 @@ export function TodayTimeline({ tasks, meetings }: TodayTimelineProps) {
         endTime: new Date(m.end_time),
         status: m.status,
         isOverdue: m.is_overdue || false,
-        meetingLink: m.meeting_link || m.location,
+        meetingLink: extractMeetingUrl(m),
       }));
 
     const todayTasks: TimelineItem[] = tasks
@@ -205,7 +206,7 @@ export function TodayTimeline({ tasks, meetings }: TodayTimelineProps) {
                         rel="noopener noreferrer"
                         className="px-2.5 py-1 text-xs bg-sky-100 text-sky-800 hover:bg-sky-200 dark:bg-sky-950 dark:text-sky-200 font-medium rounded self-start sm:self-auto"
                       >
-                        Join Call
+                        Join Call ↗
                       </a>
                     )}
                   </div>

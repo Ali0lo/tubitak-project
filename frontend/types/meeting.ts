@@ -45,7 +45,7 @@ export interface MeetingCreateInput {
   title: string;
   description?: string;
   location?: string;
-  meeting_link?: string;
+  meeting_link?: string | null;
   start_time: string;
   end_time: string;
   participants?: ParticipantInput[];
@@ -55,7 +55,7 @@ export interface MeetingUpdateInput {
   title?: string;
   description?: string;
   location?: string;
-  meeting_link?: string;
+  meeting_link?: string | null;
   start_time?: string;
   end_time?: string;
   status?: MeetingStatus;
