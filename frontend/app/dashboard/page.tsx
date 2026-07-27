@@ -37,6 +37,7 @@ import { MeetingCountdown } from "@/components/dashboard/meeting-countdown";
 import { PomodoroDashboardCard } from "@/components/dashboard/pomodoro-card";
 import { TodayTimeline } from "@/components/dashboard/today-timeline";
 import { AIWeeklySummary } from "@/components/dashboard/ai-weekly-summary";
+import { WeekdayCompletionChart } from "@/components/dashboard/weekday-completion-chart";
 
 const priorityToneMap: Record<TaskPriority, "low" | "medium" | "high" | "urgent"> = {
   low: "low",
@@ -321,9 +322,10 @@ export default function DashboardPage() {
           </Card>
         ) : null}
 
-        {/* 5. Main Grid Section: Today's Timeline & AI Weekly Summary */}
+        {/* 5. Main Grid Section: Today's Timeline, Weekday Chart & AI Weekly Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
+            <WeekdayCompletionChart tasks={allTasks} />
             <TodayTimeline tasks={allTasks} meetings={allMeetings} />
           </div>
 
