@@ -103,7 +103,9 @@ export function NotificationBell() {
         "/api/v1/notifications/unread-count"
       );
 
-      const items = res.items || [];
+      const items = (res.items || []).filter(
+        (n) => n.source !== "auth" && !n.message.toLowerCase().includes("verification token")
+      );
       setNotifications(items);
       setUnreadCount(countRes.unread_count || 0);
 

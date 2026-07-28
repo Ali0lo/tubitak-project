@@ -199,7 +199,7 @@ export default function DashboardPage() {
                 <AlertCircle className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs font-mono uppercase text-red-600 dark:text-red-400 font-medium">Overdue Tasks</p>
+                <p className="text-xs font-mono uppercase text-red-600 dark:text-red-400 font-medium">Overdue Task</p>
                 <p className="text-2xl font-bold text-red-900 dark:text-red-100">{overdueTasks.length}</p>
               </div>
             </div>
@@ -249,7 +249,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-red-600" />
                 <h2 className="font-display text-lg font-semibold text-red-700 dark:text-red-300">
-                  Overdue Tasks ({overdueTasks.length})
+                  Overdue Task ({overdueTasks.length})
                 </h2>
               </div>
               <button

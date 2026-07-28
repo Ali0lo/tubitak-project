@@ -1,14 +1,17 @@
 # Todotak
 
-An AI-powered task, meeting, and scheduling application built on a microservice architecture. Manage tasks, meetings, recurring schedules, overdue items, and reminders through a responsive Next.js frontend or via natural-language chat with an OpenAI tool-calling agent.
+An AI-powered task, meeting, Pomodoro, and scheduling application built on a modern microservice architecture. Manage tasks, meetings, Join Call links, recurring schedules, overdue items, and focus timers through a responsive Next.js frontend or via natural-language chat with an OpenAI tool-calling agent.
 
 ---
 
-## Features
+## Key Features
 
 - **Intelligent Overdue Task & Meeting Tracking**: Backend-calculated overdue metadata (`is_overdue`, `overdue_since`, `overdue_duration`, `next_reminder_at`, `last_notification_sent`). Overdue items remain active until manually completed or rescheduled.
+- **Meeting Join Call Links**: Optional **Join Call Link / Meeting URL** field for meeting creation and clickable **Join Call ↗** hyperlinks on meeting cards and timeline views.
+- **Pomodoro Focus Timer**: Integrated Pomodoro timer with Focus, Short Break, and Long Break modes, focus streak counters, sound/alarm banners, and a mini header widget.
+- **Cozy Pixel Art Micro-Animations**: Animated retro pixel art micro-illustrations (`PixelCatMascot`, `PixelSleepingCat`, `PixelTomato`, `PixelCoffeeCup`, `PixelSparkle`, `PixelHeart`), including an interactive sidebar mascot widget ("Kiki") with petting feedback and rotating quotes.
 - **Recurring Task Engine**: Supports Daily, Weekdays only, Weekly, Biweekly, Monthly, Yearly, and Custom intervals. Completing an occurrence automatically generates the next item in the series.
-- **In-App & Email Notifications**: Configurable reminder schedules for tasks and meetings with auto-dismissing in-app popup toasts, persistent history, and unread badge counters.
+- **Secure Email Verification & Notifications**: Account verification tokens delivered securely to user Gmail/email inboxes via SMTP, plus configurable reminder schedules for tasks and meetings with auto-dismissing in-app popup toasts.
 - **Enhanced Calendar View**: Visual color-coding by status:
   - 🔵 **Blue**: Upcoming
   - 🟠 **Orange**: Today
@@ -16,7 +19,7 @@ An AI-powered task, meeting, and scheduling application built on a microservice 
   - 🔴 **Red**: Overdue
   - ⚪ **Gray**: Cancelled
   - 🔁 **Recurring Icon**: Indicates recurring tasks/meetings
-- **Interactive Dashboard**: Dedicated sections for *Overdue Tasks*, *Today's Tasks*, *Upcoming*, *Missed Meetings*, *Completed Today*, and *Recent Activity* with quick action shortcuts.
+- **Interactive Dashboard**: Dedicated sections for *Overdue Task*, *Today's Tasks*, *Upcoming*, *Missed Meetings*, *Completed Today*, and *Recent Activity* with quick action shortcuts.
 - **AI Assistant Tool Integration**: Natural language actions to list overdue items, bulk reschedule overdue tasks to tomorrow, bulk complete tasks, and manage recurring events.
 - **Auto Database Migrations**: Alembic migrations run automatically on container startup across all services.
 
@@ -67,7 +70,7 @@ Every service owns its database **schema** (`auth`, `core`, `ai`, `notification`
 
 - Docker and Docker Compose v2
 - An OpenAI API key (for the AI chat assistant)
-- (Optional) SMTP credentials for email reminders
+- (Optional) SMTP credentials for email verification and reminders (e.g. Gmail SMTP)
 
 ---
 
@@ -127,12 +130,12 @@ make shell-db       # Open psql shell inside the Postgres container
 ## Repository Layout
 
 ```
-auth-service/          JWT auth, user management, refresh tokens
+auth-service/          JWT auth, user management, email verification tokens
 core-service/          Tasks, meetings, recurring rules, reminders
 ai-service/            OpenAI tool-calling assistant
-notification-service/  Email dispatch and in-app toast notification queue
+notification-service/  Email dispatch (SMTP/Gmail) and in-app toast notification queue
 gateway/               API reverse proxy, rate limiting, and auth dispatch
-frontend/              Next.js 15 App Router frontend (React 19, Tailwind, Query)
+frontend/              Next.js 15 App Router frontend (React 19, Tailwind, Pixel Art, Query)
 infra/                 Nginx edge proxy, Postgres initialization, Redis config
 monitoring/            Prometheus exporter configs and Grafana dashboards
 docker-compose.yml     Base Compose stack definition

@@ -38,6 +38,7 @@ class NotificationRepository:
         now = datetime.now(timezone.utc)
         stmt = select(Notification).where(
             Notification.user_id == user_id,
+            Notification.source != "auth",
             or_(
                 Notification.scheduled_for <= now,
                 Notification.status.in_([NotificationStatus.QUEUED, NotificationStatus.SENT, NotificationStatus.FAILED]),
@@ -62,6 +63,7 @@ class NotificationRepository:
         now = datetime.now(timezone.utc)
         stmt = select(func.count()).select_from(Notification).where(
             Notification.user_id == user_id,
+            Notification.source != "auth",
             Notification.is_read == False,
             or_(
                 Notification.scheduled_for <= now,

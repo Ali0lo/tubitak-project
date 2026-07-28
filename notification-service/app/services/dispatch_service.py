@@ -55,12 +55,20 @@ class DispatchService:
         preference = await self.preferences.get_or_create(notification.user_id)
         await self.db.commit()
 
-        if preference.email_enabled:
+        is_auth_notification = notification.source == "auth"
+        if preference.email_enabled or is_auth_notification:
             email = await self.auth_client.get_user_email(notification.user_id)
             if email:
                 try:
+                    subject = (
+                        "Verify your Todotak Account Email"
+                        if is_auth_notification
+                        else None
+                    )
                     await self.email_service.send_notification_email(
-                        to_email=email, message=notification.message
+                        to_email=email,
+                        message=notification.message,
+                        subject=subject,
                     )
                 except EmailDispatchError as exc:
                     await self.notifications.mark_failed(notification, str(exc))
@@ -68,7 +76,7 @@ class DispatchService:
                     return
             else:
                 logger.warning(
-                    "No email on file for user %s; sending in-app only",
+                    "No email on file for user %s; skipping email dispatch",
                     notification.user_id,
                 )
 

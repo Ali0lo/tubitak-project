@@ -154,7 +154,7 @@ export function AIDailySummary({
           <li className="flex items-center gap-2.5">
             <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
             <span>
-              <strong className="text-white">{summaryMetrics.overdueCount} overdue</strong> tasks
+              <strong className="text-white">{summaryMetrics.overdueCount} overdue</strong> task
             </span>
           </li>
         </ul>

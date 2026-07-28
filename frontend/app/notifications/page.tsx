@@ -44,7 +44,7 @@ export default function NotificationsPage() {
   const markAllAsRead = useMarkAllNotificationsAsRead();
   const createReminder = useCreateReminder();
 
-  const notifications = data?.items || [];
+  const notifications = (data?.items || []).filter((n) => n.source !== "auth");
   const unreadCount = unreadData?.unread_count || 0;
 
   const filteredNotifications = notifications.filter((n) =>

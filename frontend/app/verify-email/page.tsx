@@ -48,7 +48,7 @@ function VerifyEmailForm() {
 
     try {
       await resend.mutateAsync(emailToUse);
-      setResendSuccess(`Verification token sent to ${emailToUse}`);
+      setResendSuccess(`Verification email sent to your Gmail inbox (${emailToUse}). Please check your email!`);
     } catch {
       // Handled
     }
@@ -63,7 +63,7 @@ function VerifyEmailForm() {
           </div>
           <h1 className="font-display text-2xl text-ink">Verify Your Email</h1>
           <p className="text-xs text-ink-muted">
-            Enter your email verification token below to verify your Todotak account.
+            Check your Gmail / email inbox for your verification code and enter it below to verify your Todotak account.
           </p>
         </div>
 
