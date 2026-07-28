@@ -10,6 +10,8 @@ from app.schemas.message import MessageResponse
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=8_000)
     conversation_id: Optional[uuid.UUID] = None
+    user_local_time: Optional[str] = None
+    user_timezone: Optional[str] = None
 
 
 class ChatResponse(BaseModel):

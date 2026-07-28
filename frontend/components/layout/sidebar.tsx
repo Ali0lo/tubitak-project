@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   MessageSquareText,
+  Settings,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -24,15 +25,21 @@ const NAV_ITEMS = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/chat", label: "Chat", icon: MessageSquareText },
+  { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export function Sidebar({ isOpenMobile, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
   const logout = useLogout();
   const { data: unreadData } = useUnreadNotificationCount();
   const unreadCount = unreadData?.unread_count || 0;
 
-  return (
+  const content = (
     <aside className="flex h-full w-56 shrink-0 flex-col bg-forest-dark dark:bg-paper-raised dark:border-r dark:border-paper-line text-paper transition-colors duration-200">
       <div className="border-b border-paper/10 dark:border-paper-line px-5 py-5 flex items-center gap-3">
         <PixelCatMascot size={26} />
@@ -53,6 +60,8 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              aria-label={label}
+              onClick={onCloseMobile}
               className={cn(
                 "focus-ring flex items-center justify-between gap-3 rounded-seal px-3 py-2 text-sm transition-colors",
                 isActive
@@ -81,6 +90,7 @@ export function Sidebar() {
           type="button"
           onClick={() => logout.mutate()}
           disabled={logout.isPending}
+          aria-label="Sign out of Todotak"
           className="focus-ring flex w-full items-center gap-3 rounded-seal px-3 py-2 text-sm text-paper/70 dark:text-ink-muted transition-colors hover:bg-paper/5 dark:hover:bg-paper-line/40 hover:text-paper dark:hover:text-ink disabled:opacity-50"
         >
           <LogOut className="h-4 w-4" />
@@ -88,5 +98,22 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      <div className="hidden md:flex h-full">{content}</div>
+
+      {isOpenMobile && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in"
+            onClick={onCloseMobile}
+            aria-label="Close mobile navigation overlay"
+          />
+          <div className="relative z-50 flex h-full animate-in slide-in-from-left duration-200">{content}</div>
+        </div>
+      )}
+    </>
   );
 }

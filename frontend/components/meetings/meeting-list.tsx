@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { MeetingCard } from "@/components/meetings/meeting-card";
 import { useMeetings } from "@/hooks/use-meetings";
-import { PixelCoffeeCup, PixelSparkle } from "@/components/ui/pixel-art";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { MeetingStatus } from "@/types";
 
 interface MeetingListProps {
@@ -36,17 +36,11 @@ export function MeetingList({ status }: MeetingListProps) {
 
   if (!data || data.items.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-10 text-center flex flex-col items-center justify-center gap-2">
-          <PixelCoffeeCup size={36} />
-          <p className="font-display text-lg text-ink flex items-center gap-1.5 mt-1">
-            No meetings on the ledger <PixelSparkle size={14} />
-          </p>
-          <p className="text-sm text-ink-muted">
-            Schedule one, or ask the assistant to set it up.
-          </p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        title="No meetings on the ledger!"
+        description="You have no upcoming or recorded meetings matching this filter."
+        iconType="coffee"
+      />
     );
   }
 

@@ -25,6 +25,7 @@ import {
 } from "@/hooks/use-notifications";
 import { useCreateReminder } from "@/hooks/use-reminders";
 import { isoToLocalInput } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread">("all");
@@ -152,17 +153,15 @@ export default function NotificationsPage() {
             <Spinner label="Loading notification history..." />
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="text-center py-16 bg-paper-raised rounded-2xl border border-paper-line space-y-3">
-            <div className="inline-flex p-3 rounded-full bg-forest-tint text-forest">
-              <CheckCircle2 className="h-6 w-6" />
-            </div>
-            <p className="font-display text-base text-ink">No notifications found</p>
-            <p className="text-xs text-ink-muted max-w-sm mx-auto">
-              {filter === "unread"
+          <EmptyState
+            title="No notifications logged!"
+            description={
+              filter === "unread"
                 ? "You've read all your notifications! Switch to 'All Notifications' to view history."
-                : "You don't have any notifications logged in history yet."}
-            </p>
-          </div>
+                : "You don't have any notifications logged in history yet."
+            }
+            iconType="sparkle"
+          />
         ) : (
           <div className="bg-paper-raised rounded-2xl border border-paper-line divide-y divide-paper-line overflow-hidden shadow-sm">
             {filteredNotifications.map((n) => {

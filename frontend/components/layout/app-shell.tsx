@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -17,6 +17,7 @@ interface AppShellProps {
 export function AppShell({ title, children }: AppShellProps) {
   const router = useRouter();
   const { isAuthenticated, isReady } = useAuth();
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (isReady && !isAuthenticated) {
@@ -34,10 +35,16 @@ export function AppShell({ title, children }: AppShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-paper">
-      <Sidebar />
+      <Sidebar
+        isOpenMobile={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header title={title} />
-        <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
+        <Header
+          title={title}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+        />
+        <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6">{children}</main>
       </div>
     </div>
   );

@@ -25,7 +25,12 @@ async def chat(
 ) -> ChatResponse:
     try:
         conversation, final_message, tool_messages = await chat_service.send_message(
-            user_id, access_token, payload.conversation_id, payload.message
+            user_id,
+            access_token,
+            payload.conversation_id,
+            payload.message,
+            user_local_time=payload.user_local_time,
+            user_timezone=payload.user_timezone,
         )
     except AIServiceError as exc:
         raise HTTPException(

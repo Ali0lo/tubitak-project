@@ -3,12 +3,18 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.models.task import Task, TaskPriority, TaskStatus
+from app.models.subtask import Subtask
+from app.models.task_activity import TaskActivity
+from app.models.task_comment import TaskComment
 from app.repositories.task_repository import TaskRepository
 from app.schemas.task import TaskCreate, TaskUpdate
+from app.schemas.subtask import SubtaskCreate, SubtaskUpdate
+from app.schemas.task_comment import TaskCommentCreate
 from app.services.reminder_service import ReminderService
 from app.schemas.reminder import ReminderCreate
 
@@ -316,8 +322,136 @@ class TaskService:
         await self.tasks.delete(task)
         await self.db.commit()
 
+    async def log_activity(
+        self, task_id: uuid.UUID, user_id: uuid.UUID, action: str, details: Optional[str] = None
+    ) -> TaskActivity:
+        activity = TaskActivity(
+            task_id=task_id,
+            user_id=user_id,
+            action=action,
+            details=details,
+        )
+        self.db.add(activity)
+        return activity
+
+    async def get_activities(self, user_id: uuid.UUID, task_id: uuid.UUID) -> List[TaskActivity]:
+        await self.get_task(user_id, task_id)
+        stmt = (
+            select(TaskActivity)
+            .where(TaskActivity.task_id == task_id)
+            .order_by(TaskActivity.created_at.desc())
+        )
+        res = await self.db.execute(stmt)
+        return list(res.scalars().all())
+
+    # Subtasks
+    async def list_subtasks(self, user_id: uuid.UUID, task_id: uuid.UUID) -> List[Subtask]:
+        await self.get_task(user_id, task_id)
+        stmt = (
+            select(Subtask)
+            .where(Subtask.task_id == task_id)
+            .order_by(Subtask.position.asc(), Subtask.created_at.asc())
+        )
+        res = await self.db.execute(stmt)
+        return list(res.scalars().all())
+
+    async def create_subtask(
+        self, user_id: uuid.UUID, task_id: uuid.UUID, payload: SubtaskCreate
+    ) -> Subtask:
+        await self.get_task(user_id, task_id)
+        existing = await self.list_subtasks(user_id, task_id)
+        max_pos = max([s.position for s in existing], default=-1)
+
+        subtask = Subtask(
+            task_id=task_id,
+            title=payload.title,
+            completed=payload.completed,
+            position=max_pos + 1,
+        )
+        self.db.add(subtask)
+        await self.log_activity(task_id, user_id, "subtask_added", f"Added subtask '{payload.title}'")
+        await self.db.commit()
+        await self.db.refresh(subtask)
+        return subtask
+
+    async def update_subtask(
+        self, user_id: uuid.UUID, task_id: uuid.UUID, subtask_id: uuid.UUID, payload: SubtaskUpdate
+    ) -> Subtask:
+        await self.get_task(user_id, task_id)
+        stmt = select(Subtask).where(Subtask.id == subtask_id, Subtask.task_id == task_id)
+        res = await self.db.execute(stmt)
+        subtask = res.scalar_one_or_none()
+        if not subtask:
+            raise NotFoundError("Subtask not found")
+
+        if payload.title is not None:
+            subtask.title = payload.title
+        if payload.completed is not None and payload.completed != subtask.completed:
+            subtask.completed = payload.completed
+            action = "subtask_completed" if payload.completed else "subtask_uncompleted"
+            await self.log_activity(task_id, user_id, action, f"Subtask '{subtask.title}' updated")
+        if payload.position is not None:
+            subtask.position = payload.position
+
+        await self.db.commit()
+        await self.db.refresh(subtask)
+        return subtask
+
+    async def delete_subtask(
+        self, user_id: uuid.UUID, task_id: uuid.UUID, subtask_id: uuid.UUID
+    ) -> None:
+        await self.get_task(user_id, task_id)
+        stmt = select(Subtask).where(Subtask.id == subtask_id, Subtask.task_id == task_id)
+        res = await self.db.execute(stmt)
+        subtask = res.scalar_one_or_none()
+        if not subtask:
+            raise NotFoundError("Subtask not found")
+
+        await self.db.delete(subtask)
+        await self.log_activity(task_id, user_id, "subtask_deleted", f"Deleted subtask '{subtask.title}'")
+        await self.db.commit()
+
+    async def reorder_subtasks(
+        self, user_id: uuid.UUID, task_id: uuid.UUID, subtask_ids: List[uuid.UUID]
+    ) -> List[Subtask]:
+        existing = await self.list_subtasks(user_id, task_id)
+        subtask_map = {s.id: s for s in existing}
+        for index, sid in enumerate(subtask_ids):
+            if sid in subtask_map:
+                subtask_map[sid].position = index
+        await self.db.commit()
+        return await self.list_subtasks(user_id, task_id)
+
+    # Comments
+    async def list_comments(self, user_id: uuid.UUID, task_id: uuid.UUID) -> List[TaskComment]:
+        await self.get_task(user_id, task_id)
+        stmt = (
+            select(TaskComment)
+            .where(TaskComment.task_id == task_id)
+            .order_by(TaskComment.created_at.asc())
+        )
+        res = await self.db.execute(stmt)
+        return list(res.scalars().all())
+
+    async def create_comment(
+        self, user_id: uuid.UUID, task_id: uuid.UUID, payload: TaskCommentCreate
+    ) -> TaskComment:
+        await self.get_task(user_id, task_id)
+        comment = TaskComment(
+            task_id=task_id,
+            user_id=user_id,
+            author_name=payload.author_name,
+            message=payload.message,
+        )
+        self.db.add(comment)
+        await self.log_activity(task_id, user_id, "comment_added", f"Added a comment")
+        await self.db.commit()
+        await self.db.refresh(comment)
+        return comment
+
     @staticmethod
     def _assert_owner(task: Task, user_id: uuid.UUID) -> None:
         if task.user_id != user_id:
             raise ForbiddenError("You do not have access to this task")
+
 

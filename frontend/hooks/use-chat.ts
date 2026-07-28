@@ -36,8 +36,14 @@ export function useConversation(conversationId: string | null) {
 export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ChatRequest) =>
-      apiClient.post<ChatResponse>("/api/v1/ai/chat", payload),
+    mutationFn: (payload: ChatRequest) => {
+      const enrichedPayload = {
+        ...payload,
+        user_local_time: new Date().toString(),
+        user_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
+      return apiClient.post<ChatResponse>("/api/v1/ai/chat", enrichedPayload);
+    },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       queryClient.invalidateQueries({

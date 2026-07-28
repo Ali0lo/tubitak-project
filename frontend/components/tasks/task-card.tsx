@@ -7,6 +7,7 @@ import { useDeleteTask, useUpdateTask } from "@/hooks/use-tasks";
 import { cn, formatDateLabel, formatTimestamp } from "@/lib/utils";
 import type { Task, TaskPriority } from "@/types";
 import { usePomodoroStore } from "@/stores/pomodoro-store";
+import { useTaskDrawerStore } from "@/stores/task-drawer-store";
 
 const priorityTone: Record<
   TaskPriority,
@@ -69,11 +70,14 @@ export function TaskCard({ task }: TaskCardProps) {
         )}
       />
 
-      <div className="min-w-0 flex-1">
+      <div
+        onClick={() => useTaskDrawerStore.getState().openDrawer(task.id)}
+        className="min-w-0 flex-1 cursor-pointer"
+      >
         <div className="flex items-center gap-2">
           <p
             className={cn(
-              "ledger-title",
+              "ledger-title hover:text-forest transition-colors",
               isCompleted && "text-ink-faint line-through"
             )}
           >

@@ -78,6 +78,8 @@ class ChatService:
         access_token: str,
         conversation_id: Optional[uuid.UUID],
         content: str,
+        user_local_time: Optional[str] = None,
+        user_timezone: Optional[str] = None,
     ) -> Tuple[Conversation, Message, List[Message]]:
         conversation = await self._get_or_create_conversation(
             user_id, conversation_id
@@ -97,11 +99,18 @@ class ChatService:
         )
         now_utc = datetime.now(timezone.utc)
         now_local = datetime.now().astimezone()
-        now_str = f"{now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')} / Local: {now_local.strftime('%Y-%m-%d %H:%M:%S %z (%A)')}"
+        now_str = f"{now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')} / Server: {now_local.strftime('%Y-%m-%d %H:%M:%S %z (%A)')}"
+        
+        timezone_context = (
+            f"User Local Time: {user_local_time} (Timezone: {user_timezone or 'User Local'})."
+            if user_local_time
+            else f"Current Reference Date and Time: {now_str}."
+        )
+
         system_content = (
             f"{SYSTEM_PROMPT}\n"
-            f"Current date and time: {now_str}. "
-            "Use this as reference when resolving relative dates like 'today', 'tomorrow', 'next week', or specific clock times. Ensure tool call timestamps specify ISO string with timezone or UTC offset."
+            f"{timezone_context}\n"
+            "Use this reference when resolving relative dates like 'today', 'tomorrow', or specific clock times like '9 am'. Calculate timestamps relative to the user's local clock time. Ensure tool call due_date parameter specifies an ISO 8601 string with local timezone offset (e.g. 2026-07-29T09:00:00+03:00)."
         )
         openai_messages: List[dict] = [
             {"role": "system", "content": system_content}

@@ -10,6 +10,12 @@ from app.api.deps import get_current_user_id, get_task_service
 from app.core.exceptions import CoreServiceError
 from app.models.task import Task, TaskPriority, TaskStatus
 from app.schemas.common import PageResponse
+from app.schemas.subtask import (
+    SubtaskCreate,
+    SubtaskReorderRequest,
+    SubtaskResponse,
+    SubtaskUpdate,
+)
 from app.schemas.task import (
     BulkCompleteRequest,
     BulkRescheduleRequest,
@@ -17,6 +23,8 @@ from app.schemas.task import (
     TaskResponse,
     TaskUpdate,
 )
+from app.schemas.task_activity import TaskActivityResponse
+from app.schemas.task_comment import TaskCommentCreate, TaskCommentResponse
 from app.services.task_service import TaskService
 
 
@@ -209,4 +217,117 @@ async def delete_task(
         raise HTTPException(
             status_code=exc.status_code, detail=exc.message
         ) from exc
+
+
+# Subtasks Endpoints
+@router.get("/{task_id}/subtasks", response_model=List[SubtaskResponse])
+async def list_subtasks(
+    task_id: uuid.UUID,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    task_service: TaskService = Depends(get_task_service),
+) -> List[SubtaskResponse]:
+    try:
+        subtasks = await task_service.list_subtasks(user_id, task_id)
+        return [SubtaskResponse.model_validate(s) for s in subtasks]
+    except CoreServiceError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.post("/{task_id}/subtasks", response_model=SubtaskResponse, status_code=status.HTTP_201_CREATED)
+async def create_subtask(
+    task_id: uuid.UUID,
+    payload: SubtaskCreate,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    task_service: TaskService = Depends(get_task_service),
+) -> SubtaskResponse:
+    try:
+        subtask = await task_service.create_subtask(user_id, task_id, payload)
+        return SubtaskResponse.model_validate(subtask)
+    except CoreServiceError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.patch("/{task_id}/subtasks/{subtask_id}", response_model=SubtaskResponse)
+async def update_subtask(
+    task_id: uuid.UUID,
+    subtask_id: uuid.UUID,
+    payload: SubtaskUpdate,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    task_service: TaskService = Depends(get_task_service),
+) -> SubtaskResponse:
+    try:
+        subtask = await task_service.update_subtask(user_id, task_id, subtask_id, payload)
+        return SubtaskResponse.model_validate(subtask)
+    except CoreServiceError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.delete("/{task_id}/subtasks/{subtask_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_subtask(
+    task_id: uuid.UUID,
+    subtask_id: uuid.UUID,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    task_service: TaskService = Depends(get_task_service),
+) -> None:
+    try:
+        await task_service.delete_subtask(user_id, task_id, subtask_id)
+    except CoreServiceError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.post("/{task_id}/subtasks/reorder", response_model=List[SubtaskResponse])
+async def reorder_subtasks(
+    task_id: uuid.UUID,
+    payload: SubtaskReorderRequest,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    task_service: TaskService = Depends(get_task_service),
+) -> List[SubtaskResponse]:
+    try:
+        subtasks = await task_service.reorder_subtasks(user_id, task_id, payload.subtask_ids)
+        return [SubtaskResponse.model_validate(s) for s in subtasks]
+    except CoreServiceError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+# Activity Timeline Endpoints
+@router.get("/{task_id}/activities", response_model=List[TaskActivityResponse])
+async def get_task_activities(
+    task_id: uuid.UUID,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    task_service: TaskService = Depends(get_task_service),
+) -> List[TaskActivityResponse]:
+    try:
+        activities = await task_service.get_activities(user_id, task_id)
+        return [TaskActivityResponse.model_validate(a) for a in activities]
+    except CoreServiceError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+# Comments Endpoints
+@router.get("/{task_id}/comments", response_model=List[TaskCommentResponse])
+async def list_comments(
+    task_id: uuid.UUID,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    task_service: TaskService = Depends(get_task_service),
+) -> List[TaskCommentResponse]:
+    try:
+        comments = await task_service.list_comments(user_id, task_id)
+        return [TaskCommentResponse.model_validate(c) for c in comments]
+    except CoreServiceError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
+
+@router.post("/{task_id}/comments", response_model=TaskCommentResponse, status_code=status.HTTP_201_CREATED)
+async def create_comment(
+    task_id: uuid.UUID,
+    payload: TaskCommentCreate,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    task_service: TaskService = Depends(get_task_service),
+) -> TaskCommentResponse:
+    try:
+        comment = await task_service.create_comment(user_id, task_id, payload)
+        return TaskCommentResponse.model_validate(comment)
+    except CoreServiceError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+
 

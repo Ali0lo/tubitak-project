@@ -96,6 +96,15 @@ class Task(Base):
     tags: Mapped[List["TaskTag"]] = relationship(
         back_populates="task", cascade="all, delete-orphan"
     )
+    subtasks: Mapped[List["Subtask"]] = relationship(
+        "Subtask", back_populates="task", cascade="all, delete-orphan", order_by="Subtask.position"
+    )
+    activities: Mapped[List["TaskActivity"]] = relationship(
+        "TaskActivity", back_populates="task", cascade="all, delete-orphan", order_by="TaskActivity.created_at.desc()"
+    )
+    comments: Mapped[List["TaskComment"]] = relationship(
+        "TaskComment", back_populates="task", cascade="all, delete-orphan", order_by="TaskComment.created_at.asc()"
+    )
 
     def __repr__(self) -> str:
         return f"<Task id={self.id} title={self.title!r} status={self.status}>"

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { TaskCard } from "@/components/tasks/task-card";
 import { useTasks } from "@/hooks/use-tasks";
-import { PixelCatMascot, PixelSparkle } from "@/components/ui/pixel-art";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { TaskFilters } from "@/types";
 
 interface TaskListProps {
@@ -36,17 +36,11 @@ export function TaskList({ filters }: TaskListProps) {
 
   if (!data || data.items.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-10 text-center flex flex-col items-center justify-center gap-2">
-          <PixelCatMascot size={36} />
-          <p className="font-display text-lg text-ink flex items-center gap-1.5 mt-1">
-            Nothing on the ledger yet <PixelSparkle size={14} />
-          </p>
-          <p className="text-sm text-ink-muted">
-            Add a task, or tell the assistant what you need to do.
-          </p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        title="Nothing on the ledger yet!"
+        description="Your task workspace is clear. Create a new task or use natural language bulk actions above."
+        iconType="cat"
+      />
     );
   }
 

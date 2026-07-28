@@ -84,3 +84,48 @@ export interface TaskFilters {
   recurring?: boolean;
 }
 
+export interface Subtask {
+  id: string;
+  task_id: string;
+  title: string;
+  completed: boolean;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubtaskCreateInput {
+  title: string;
+  completed?: boolean;
+}
+
+export interface SubtaskUpdateInput {
+  title?: string;
+  completed?: boolean;
+  position?: number;
+}
+
+export interface TaskActivity {
+  id: string;
+  task_id: string;
+  user_id: string;
+  action: string;
+  details: string | null;
+  created_at: string;
+}
+
+export interface TaskComment {
+  id: string;
+  task_id: string;
+  user_id: string;
+  author_name: string;
+  message: string;
+  created_at: string;
+}
+
+export interface TaskCommentCreateInput {
+  message: string;
+  author_name?: string;
+}
+
+
