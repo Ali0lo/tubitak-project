@@ -7,7 +7,7 @@ natural-language request, and this service drives that loop, persists
 every message and tool call for auditability, and returns the final
 assistant reply.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 import time
 import uuid
@@ -44,6 +44,8 @@ SYSTEM_PROMPT = (
     "clarifying question only when you genuinely cannot proceed "
     "without more information."
 )
+
+CHATBOT_TIMEZONE = timezone(timedelta(hours=3), name="UTC+03:00")
 
 
 def _message_to_openai_dict(message: Message) -> dict:
@@ -98,15 +100,14 @@ class ChatService:
             conversation.id, limit=self.settings.MAX_CONVERSATION_HISTORY_MESSAGES
         )
         now_utc = datetime.now(timezone.utc)
-        now_local = datetime.now().astimezone()
-        now_str = f"{now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')} / Server: {now_local.strftime('%Y-%m-%d %H:%M:%S %z (%A)')}"
+        now_local = datetime.now(CHATBOT_TIMEZONE)
+        now_str = f"{now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')} / Local: {now_local.strftime('%Y-%m-%d %H:%M:%S %z (%A)')}"
         
         timezone_context = (
             f"User Local Time: {user_local_time} (Timezone: {user_timezone or 'User Local'})."
             if user_local_time
             else f"Current Reference Date and Time: {now_str}."
         )
-
         system_content = (
             f"{SYSTEM_PROMPT}\n"
             f"{timezone_context}\n"
