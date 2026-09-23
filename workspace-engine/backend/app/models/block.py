@@ -78,10 +78,10 @@ class Block(Base):
     )
 
     page = relationship("Page", back_populates="blocks")
+    parent = relationship("Block", remote_side=[id], back_populates="children")
     children = relationship(
         "Block",
-        backref="parent_block",
-        remote_side=[id],
+        back_populates="parent",
         cascade="all, delete-orphan",
         order_by="Block.sort_order",
     )

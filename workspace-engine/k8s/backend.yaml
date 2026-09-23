@@ -53,7 +53,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
       containers:
         - name: backend
-          image: workspace-engine-backend:latest
+          image: workspace-engine-backend:v1.0.1
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
