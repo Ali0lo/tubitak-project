@@ -1,6 +1,8 @@
 """Workspace API endpoints."""
+
 import uuid
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,9 +27,7 @@ async def list_workspaces(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("", response_model=WorkspaceResponse, status_code=status.HTTP_201_CREATED)
-async def create_workspace(
-    data: WorkspaceCreate, db: AsyncSession = Depends(get_db)
-):
+async def create_workspace(data: WorkspaceCreate, db: AsyncSession = Depends(get_db)):
     # Check slug uniqueness
     stmt = select(Workspace).where(Workspace.slug == data.slug)
     existing = (await db.execute(stmt)).scalar_one_or_none()
@@ -72,9 +72,7 @@ async def create_workspace(
 
 
 @router.get("/{workspace_id_or_slug}", response_model=WorkspaceResponse)
-async def get_workspace(
-    workspace_id_or_slug: str, db: AsyncSession = Depends(get_db)
-):
+async def get_workspace(workspace_id_or_slug: str, db: AsyncSession = Depends(get_db)):
     try:
         ws_id = uuid.UUID(workspace_id_or_slug)
         stmt = (

@@ -5,6 +5,7 @@ registers, sends the internal API key header, and that auth-service's
 UserResponse schema actually contains the "email" field
 AuthServiceClient.get_user_email() reads out of the response.
 """
+
 from tests.contracts.helpers import (
     get_json_schema,
     get_route_paths,
@@ -18,9 +19,7 @@ def test_auth_service_registers_the_internal_lookup_route() -> None:
 
 
 def test_user_response_schema_includes_email_field() -> None:
-    schema = get_json_schema(
-        "auth-service", "app.schemas.user", "UserResponse"
-    )
+    schema = get_json_schema("auth-service", "app.schemas.user", "UserResponse")
     assert "email" in schema["properties"]
     assert "email" in schema.get("required", [])
 

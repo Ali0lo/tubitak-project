@@ -5,7 +5,8 @@ to at least one route the target service registers — catching the
 class of bug where a service renames or removes an endpoint and the
 gateway silently keeps routing to a prefix that now 404s everywhere.
 """
-from tests.contracts.helpers import run_script, get_route_paths
+
+from tests.contracts.helpers import get_route_paths, run_script
 
 
 def _get_gateway_route_table() -> dict:

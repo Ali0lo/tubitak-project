@@ -1,6 +1,8 @@
 """Block business logic, tree nesting, and batch sync."""
+
 import uuid
 from typing import Dict, List, Optional
+
 from fastapi import HTTPException
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +12,6 @@ from app.schemas.block import (
     BlockBatchSyncRequest,
     BlockCreate,
     BlockMoveRequest,
-    BlockResponse,
     BlockTreeNode,
     BlockUpdate,
 )

@@ -1,7 +1,9 @@
 """Workspace and WorkspaceMember models."""
+
 import enum
 import uuid
 from datetime import datetime, timezone
+
 from sqlalchemy import (
     Column,
     DateTime,

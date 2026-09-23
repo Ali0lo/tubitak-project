@@ -1,7 +1,9 @@
 """WorkspaceEngine FastAPI application entry point."""
+
 import json
 import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -90,10 +92,14 @@ async def websocket_collaboration_endpoint(websocket: WebSocket, page_id: str):
                         )
                     elif msg_type == "block_sync":
                         # Client sent debounced block snapshot; relay to peers
-                        await yjs_manager.broadcast(page_id, text_data, sender=websocket)
+                        await yjs_manager.broadcast(
+                            page_id, text_data, sender=websocket
+                        )
                     else:
                         # Relay other custom sync messages
-                        await yjs_manager.broadcast(page_id, text_data, sender=websocket)
+                        await yjs_manager.broadcast(
+                            page_id, text_data, sender=websocket
+                        )
                 except json.JSONDecodeError:
                     await yjs_manager.broadcast(page_id, text_data, sender=websocket)
 

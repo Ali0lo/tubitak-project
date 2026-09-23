@@ -1,5 +1,7 @@
 """Unit tests for the fractional indexing algorithm."""
+
 import pytest
+
 from app.services.fractional_indexing import (
     generate_fractional_index,
     rebalance_indices,

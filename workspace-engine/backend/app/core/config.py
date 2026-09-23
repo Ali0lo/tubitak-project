@@ -1,5 +1,7 @@
 """Configuration settings for WorkspaceEngine backend."""
+
 from typing import List, Union
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -16,7 +18,9 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/workspace_engine"
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/workspace_engine"
+    )
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

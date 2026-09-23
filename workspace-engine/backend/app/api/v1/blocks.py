@@ -1,6 +1,8 @@
 """Block API endpoints."""
+
 import uuid
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,9 +27,7 @@ async def get_page_blocks(page_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 
 
 @router.get("/page/{page_id}/tree", response_model=List[BlockTreeNode])
-async def get_page_block_tree(
-    page_id: uuid.UUID, db: AsyncSession = Depends(get_db)
-):
+async def get_page_block_tree(page_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     service = BlockService(db)
     return await service.build_block_tree(page_id)
 

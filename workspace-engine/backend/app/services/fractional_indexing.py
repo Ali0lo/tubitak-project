@@ -4,14 +4,15 @@ Enables inserting items before, between, or after existing items without
 updating the sort order of any other records in the database.
 Uses a Base-62 character set: 0-9, A-Z, a-z.
 """
+
 from typing import List, Optional
 
 BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 BASE_LEN = len(BASE62)
 CHAR_TO_INT = {c: i for i, c in enumerate(BASE62)}
 MID_CHAR = BASE62[BASE_LEN // 2]  # 'V'
-MIN_CHAR = BASE62[0]             # '0'
-MAX_CHAR = BASE62[-1]            # 'z'
+MIN_CHAR = BASE62[0]  # '0'
+MAX_CHAR = BASE62[-1]  # 'z'
 
 
 def generate_fractional_index(
@@ -39,7 +40,9 @@ def generate_fractional_index(
 
     # Insert between before and after
     if before >= after:
-        raise ValueError(f"Constraint violated: before ({before}) must be < after ({after})")
+        raise ValueError(
+            f"Constraint violated: before ({before}) must be < after ({after})"
+        )
 
     return _midpoint(before, after)
 
@@ -125,7 +128,7 @@ def rebalance_indices(count: int, prefix: str = "a") -> List[str]:
     # If duplicates occurred due to high count, append secondary digits
     seen = set()
     result = []
-    for i, item in enumerate(indices):
+    for _i, item in enumerate(indices):
         current = item
         counter = 0
         while current in seen:

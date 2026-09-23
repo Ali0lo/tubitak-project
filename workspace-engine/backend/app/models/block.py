@@ -1,7 +1,9 @@
 """Atomic block entity model supporting tree nesting and rich content."""
+
 import enum
 import uuid
 from datetime import datetime, timezone
+
 from sqlalchemy import (
     Column,
     DateTime,

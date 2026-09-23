@@ -14,6 +14,7 @@ schema or a client class doesn't connect to anything, it just
 constructs Settings() (which needs syntactically-plausible env vars,
 not a reachable database) and defines classes.
 """
+
 import json
 import subprocess
 import sys

@@ -27,20 +27,22 @@ class Settings(BaseSettings):
             return v.lower() in ("true", "1", "t", "yes", "y")
         return bool(v)
 
-    DATABASE_URL: str
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://todotak:todotak@localhost:5432/todotak_test"
+    )
     REDIS_URL: str = "redis://localhost:6379/3"
 
     # Must match auth-service's values so end-user access tokens
     # (used by the list-notifications / preferences endpoints) verify
     # here without a network round-trip.
-    JWT_SECRET_KEY: str
+    JWT_SECRET_KEY: str = "test-secret-key-for-unit-tests-only"
     JWT_ALGORITHM: str = "HS256"
 
     # Shared secret checked on the internal schedule/cancel endpoints
     # that core-service calls directly (not through the gateway).
     # Prevents an end user from injecting arbitrary notifications for
     # other users even if they can reach this service on the network.
-    INTERNAL_SERVICE_API_KEY: str
+    INTERNAL_SERVICE_API_KEY: str = "test-internal-key"
 
     SMTP_HOST: str = "localhost"
     SMTP_PORT: int = 587

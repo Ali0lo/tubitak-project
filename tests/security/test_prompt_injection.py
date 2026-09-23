@@ -1,1 +1,1 @@
-""" tests/security/test_prompt_injection.py """
+"""tests/security/test_prompt_injection.py"""

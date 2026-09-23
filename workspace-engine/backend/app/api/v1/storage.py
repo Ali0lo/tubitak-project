@@ -1,6 +1,8 @@
 """Storage API for presigned image and attachment upload URLs."""
+
 import uuid
 from typing import Optional
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 

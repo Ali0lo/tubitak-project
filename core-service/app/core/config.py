@@ -27,13 +27,15 @@ class Settings(BaseSettings):
             return v.lower() in ("true", "1", "t", "yes", "y")
         return bool(v)
 
-    DATABASE_URL: str
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://todotak:todotak@localhost:5432/todotak_test"
+    )
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # Must match auth-service's JWT_SECRET_KEY / JWT_ALGORITHM so that
     # access tokens issued by auth-service can be verified here without
     # a network round-trip on every request.
-    JWT_SECRET_KEY: str
+    JWT_SECRET_KEY: str = "test-secret-key-for-unit-tests-only"
     JWT_ALGORITHM: str = "HS256"
 
     NOTIFICATION_SERVICE_URL: str = "http://notification-service:8000"
@@ -42,7 +44,7 @@ class Settings(BaseSettings):
     # Shared across auth-service, core-service, and notification-service.
     # Sent as X-Internal-Api-Key when calling notification-service's
     # internal schedule/cancel endpoints directly (not through the gateway).
-    INTERNAL_SERVICE_API_KEY: str
+    INTERNAL_SERVICE_API_KEY: str = "test-internal-key"
 
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 

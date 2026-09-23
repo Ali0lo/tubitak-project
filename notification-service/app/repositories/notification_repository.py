@@ -1,10 +1,10 @@
 """Data access layer for the Notification model."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional, Tuple
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.notification import Notification, NotificationStatus
@@ -36,20 +36,10 @@ class NotificationRepository:
     async def list_for_user(
         self, user_id: uuid.UUID, *, offset: int, limit: int, unread_only: bool = False
     ) -> Tuple[List[Notification], int]:
-        now = datetime.now(timezone.utc)
         stmt = select(Notification).where(
             Notification.user_id == user_id,
             Notification.source != "auth",
-            or_(
-                Notification.scheduled_for <= now,
-                Notification.status.in_(
-                    [
-                        NotificationStatus.QUEUED,
-                        NotificationStatus.SENT,
-                        NotificationStatus.FAILED,
-                    ]
-                ),
-            ),
+            Notification.status != NotificationStatus.CANCELLED,
         )
 
         if unread_only:
@@ -65,7 +55,6 @@ class NotificationRepository:
         return list(result.scalars().all()), total
 
     async def get_unread_count(self, user_id: uuid.UUID) -> int:
-        now = datetime.now(timezone.utc)
         stmt = (
             select(func.count())
             .select_from(Notification)
@@ -73,16 +62,7 @@ class NotificationRepository:
                 Notification.user_id == user_id,
                 Notification.source != "auth",
                 Notification.is_read == False,
-                or_(
-                    Notification.scheduled_for <= now,
-                    Notification.status.in_(
-                        [
-                            NotificationStatus.QUEUED,
-                            NotificationStatus.SENT,
-                            NotificationStatus.FAILED,
-                        ]
-                    ),
-                ),
+                Notification.status != NotificationStatus.CANCELLED,
             )
         )
         return (await self.db.execute(stmt)).scalar_one()

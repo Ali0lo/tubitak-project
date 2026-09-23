@@ -1,6 +1,8 @@
 """Page API endpoints."""
+
 import uuid
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,7 +26,9 @@ async def get_page_tree(
     db: AsyncSession = Depends(get_db),
 ):
     service = PageService(db)
-    return await service.build_page_tree(workspace_id, include_archived=include_archived)
+    return await service.build_page_tree(
+        workspace_id, include_archived=include_archived
+    )
 
 
 @router.post("", response_model=PageResponse, status_code=status.HTTP_201_CREATED)

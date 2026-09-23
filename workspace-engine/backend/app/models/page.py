@@ -1,6 +1,8 @@
 """Page hierarchical tree model."""
+
 import uuid
 from datetime import datetime, timezone
+
 from sqlalchemy import (
     Boolean,
     Column,
@@ -68,5 +70,7 @@ class Page(Base):
     )
 
     __table_args__ = (
-        Index("ix_pages_workspace_parent_sort", "workspace_id", "parent_id", "sort_order"),
+        Index(
+            "ix_pages_workspace_parent_sort", "workspace_id", "parent_id", "sort_order"
+        ),
     )

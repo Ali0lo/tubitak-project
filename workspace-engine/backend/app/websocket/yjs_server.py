@@ -1,9 +1,11 @@
 """WebSocket collaboration server for real-time Yjs CRDT synchronization and presence."""
+
 import asyncio
 import json
 import logging
 from typing import Dict, Set
-from fastapi import WebSocket, WebSocketDisconnect
+
+from fastapi import WebSocket
 
 logger = logging.getLogger("yjs_websocket")
 
@@ -24,7 +26,9 @@ class YjsConnectionManager:
             if page_id not in self.rooms:
                 self.rooms[page_id] = set()
             self.rooms[page_id].add(websocket)
-        logger.info(f"Client connected to room {page_id}. Total: {len(self.rooms[page_id])}")
+        logger.info(
+            f"Client connected to room {page_id}. Total: {len(self.rooms[page_id])}"
+        )
 
     async def disconnect(self, page_id: str, websocket: WebSocket):
         async with self._lock:
@@ -61,7 +65,9 @@ class YjsConnectionManager:
                 except Exception as e:
                     logger.warning(f"Error sending message to peer: {e}")
 
-    async def broadcast_bytes(self, page_id: str, data: bytes, sender: WebSocket = None):
+    async def broadcast_bytes(
+        self, page_id: str, data: bytes, sender: WebSocket = None
+    ):
         """Broadcast raw binary Yjs update to peers."""
         async with self._lock:
             peers = list(self.rooms.get(page_id, []))

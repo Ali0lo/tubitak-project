@@ -24,23 +24,25 @@ settings = get_settings()
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     import asyncio
     import logging
+    import os
     import subprocess  # nosec B404
 
     logger = logging.getLogger("notification-service.startup")
-    try:
+    if settings.ENVIRONMENT != "test" and not os.environ.get("TEST_DATABASE_URL"):
+        try:
 
-        def run_alembic():
-            res = subprocess.run(  # nosec B603, B607
-                ["alembic", "upgrade", "head"], capture_output=True, text=True
-            )
-            if res.returncode != 0:
-                logger.warning(f"Alembic migration warning: {res.stderr}")
-            else:
-                logger.info("Alembic migrations applied successfully.")
+            def run_alembic():
+                res = subprocess.run(  # nosec B603, B607
+                    ["alembic", "upgrade", "head"], capture_output=True, text=True
+                )
+                if res.returncode != 0:
+                    logger.warning(f"Alembic migration warning: {res.stderr}")
+                else:
+                    logger.info("Alembic migrations applied successfully.")
 
-        await asyncio.to_thread(run_alembic)
-    except Exception as exc:
-        logger.warning(f"Failed to auto-run migrations: {exc}")
+            await asyncio.to_thread(run_alembic)
+        except Exception as exc:
+            logger.warning(f"Failed to auto-run migrations: {exc}")
 
     yield
 
@@ -62,8 +64,8 @@ def create_app() -> FastAPI:
     )
 
     register_exception_handlers(app)
-    app.include_router(notifications_router, prefix="/api/v1")
     app.include_router(preferences_router, prefix="/api/v1")
+    app.include_router(notifications_router, prefix="/api/v1")
 
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:

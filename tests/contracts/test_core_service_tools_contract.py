@@ -6,6 +6,7 @@ create_reminder) actually validates against core-service's own
 Pydantic request schemas, and that the URLs/methods used match a real
 core-service route.
 """
+
 from tests.contracts.helpers import (
     get_route_paths,
     run_with_captured_http_call,
@@ -107,6 +108,6 @@ def test_every_core_service_client_endpoint_exists_on_core_service() -> None:
     route_paths = get_route_paths("core-service")
     prefixes_used = ["/api/v1/tasks", "/api/v1/meetings", "/api/v1/reminders"]
     for prefix in prefixes_used:
-        assert any(p.startswith(prefix) for p in route_paths), (
-            f"{prefix} not found among core-service routes: {route_paths}"
-        )
+        assert any(
+            p.startswith(prefix) for p in route_paths
+        ), f"{prefix} not found among core-service routes: {route_paths}"

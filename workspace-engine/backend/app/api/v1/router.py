@@ -1,4 +1,5 @@
 """V1 API router aggregation."""
+
 from fastapi import APIRouter
 
 from app.api.v1.blocks import router as blocks_router

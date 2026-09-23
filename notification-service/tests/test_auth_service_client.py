@@ -44,7 +44,9 @@ async def test_get_user_email_sends_internal_api_key_header() -> None:
 
     client = _client_with_handler(handler)
     await client.get_user_email(uuid.uuid4())
-    assert captured["header"] == "test-internal-key"
+    from app.core.config import get_settings
+
+    assert captured["header"] == get_settings().INTERNAL_SERVICE_API_KEY
 
 
 async def test_get_user_email_returns_none_on_404() -> None:

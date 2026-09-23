@@ -3,6 +3,7 @@ request with no Authorization header. This sweeps the real endpoint
 list from docs/api.md against each service's real ASGI app — no
 database or network required (see helpers.py for how).
 """
+
 from tests.security.helpers import DUMMY_UUID, sweep_unauthenticated_requests
 
 
@@ -117,6 +118,6 @@ def test_auth_service_public_endpoints_do_not_require_auth() -> None:
         "auth-service", "app.db.session", "get_db", requests
     )
     wrongly_rejected = [r for r in results if r["status"] == 401]
-    assert not wrongly_rejected, (
-        f"These are meant to be public but got 401: {wrongly_rejected}"
-    )
+    assert (
+        not wrongly_rejected
+    ), f"These are meant to be public but got 401: {wrongly_rejected}"

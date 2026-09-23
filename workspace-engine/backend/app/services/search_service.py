@@ -1,7 +1,9 @@
 """Full-text fuzzy search service across pages and block contents."""
+
 import uuid
 from typing import List
-from sqlalchemy import or_, select
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.block import Block

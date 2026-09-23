@@ -1,7 +1,9 @@
 """Schemas for hierarchical Page resources."""
+
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 

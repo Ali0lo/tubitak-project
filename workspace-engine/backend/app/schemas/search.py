@@ -1,6 +1,8 @@
 """Schemas for full-text search across pages and block contents."""
+
 import uuid
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 

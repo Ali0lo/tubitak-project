@@ -14,6 +14,7 @@ route, the request fails with a 500 (unhandled exception trying to use
 a None session) rather than silently passing, which is itself a useful
 signal.
 """
+
 import json
 import os
 import subprocess

@@ -1,8 +1,9 @@
 """Unit tests for Page and Block tree hierarchy building and cycle prevention."""
+
 import uuid
-import pytest
-from app.schemas.page import PageTreeNode
+
 from app.schemas.block import BlockTreeNode, BlockType
+from app.schemas.page import PageTreeNode
 from app.services.fractional_indexing import generate_fractional_index
 
 
@@ -17,8 +18,18 @@ def test_build_page_tree_nesting():
     # Flat representation
     flat_pages = [
         {"id": root1_id, "parent_id": None, "title": "Root 1", "sort_order": "a0"},
-        {"id": child1_id, "parent_id": root1_id, "title": "Child 1", "sort_order": "a0"},
-        {"id": grandchild1_id, "parent_id": child1_id, "title": "Grandchild 1", "sort_order": "a0"},
+        {
+            "id": child1_id,
+            "parent_id": root1_id,
+            "title": "Child 1",
+            "sort_order": "a0",
+        },
+        {
+            "id": grandchild1_id,
+            "parent_id": child1_id,
+            "title": "Grandchild 1",
+            "sort_order": "a0",
+        },
         {"id": root2_id, "parent_id": None, "title": "Root 2", "sort_order": "a1"},
     ]
 
