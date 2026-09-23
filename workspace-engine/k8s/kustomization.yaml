@@ -12,4 +12,7 @@ resources:
   - minio.yaml
   - backend.yaml
   - frontend.yaml
+  - backend-hpa.yaml
+  - frontend-hpa.yaml
   - ingress.yaml
+

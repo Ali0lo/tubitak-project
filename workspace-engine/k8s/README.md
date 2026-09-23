@@ -102,3 +102,4 @@ Access the application:
 - Backend API Docs: `http://localhost/docs`
 - Health check: `http://localhost/health`
 - WebSocket Endpoint: `ws://localhost/ws/collaboration/{page_id}`
+
