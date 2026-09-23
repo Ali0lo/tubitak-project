@@ -54,17 +54,35 @@ export function BlockEditor({
     if (initialBlocks.length > 0) {
       setBlocks(initialBlocks);
     } else {
-      // Default initial text block
-      const firstBlock: Block = {
-        id: crypto.randomUUID(),
-        page_id: page.id,
-        parent_block_id: null,
-        type: "text",
-        content: [{ text: "" }],
-        properties: {},
-        sort_order: "a0",
-      };
-      setBlocks([firstBlock]);
+      let restoredFromCache = false;
+      if (typeof window !== "undefined") {
+        try {
+          const cached = localStorage.getItem(`offline_blocks_${page.id}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setBlocks(parsed);
+              restoredFromCache = true;
+            }
+          }
+        } catch {
+          // Ignore cache parse error
+        }
+      }
+
+      if (!restoredFromCache) {
+        // Default initial text block
+        const firstBlock: Block = {
+          id: crypto.randomUUID(),
+          page_id: page.id,
+          parent_block_id: null,
+          type: "text",
+          content: [{ text: "" }],
+          properties: {},
+          sort_order: "a0",
+        };
+        setBlocks([firstBlock]);
+      }
     }
   }, [page.id, initialBlocks, setBlocks]);
 
@@ -91,6 +109,15 @@ export function BlockEditor({
       }
 
       setIsSaving(true);
+      // Immediately cache to localStorage for offline survival
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(`offline_blocks_${page.id}`, JSON.stringify(currentBlocks));
+        } catch {
+          // Ignore quota errors
+        }
+      }
+
       debounceTimerRef.current = setTimeout(async () => {
         try {
           await apiClient.batchSyncBlocks(page.id, currentBlocks);

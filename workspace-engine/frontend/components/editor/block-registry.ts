@@ -14,6 +14,7 @@ import {
   Minus,
   Table,
   Image,
+  Globe,
 } from "lucide-react";
 
 export interface BlockDefinition {
@@ -122,5 +123,12 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     description: "Upload or embed with a link.",
     icon: Image,
     keywords: ["image", "picture", "photo", "upload", "img"],
+  },
+  {
+    type: "embed",
+    label: "Embed",
+    description: "Embed YouTube, Vimeo, Figma, or web content.",
+    icon: Globe,
+    keywords: ["embed", "youtube", "video", "figma", "vimeo", "iframe"],
   },
 ];

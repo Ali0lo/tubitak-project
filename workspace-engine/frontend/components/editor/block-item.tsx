@@ -14,6 +14,7 @@ import { CalloutBlock } from "./extensions/block-types/callout-block";
 import { DividerBlock } from "./extensions/block-types/divider-block";
 import { TableBlock } from "./extensions/block-types/table-block";
 import { ImageBlock } from "./extensions/block-types/image-block";
+import { EmbedBlock } from "./extensions/block-types/embed-block";
 import { evaluateMarkdownTrigger } from "./extensions/markdown-shortcuts";
 import { handleBlockKeyDown } from "./extensions/keyboard-handlers";
 import { UserPresence } from "@/types/presence";
@@ -296,6 +297,23 @@ export function BlockItem({
             onChangeUrl={(url) =>
               onUpdateBlock(block.id, {
                 properties: { ...block.properties, url },
+              })
+            }
+            onFocus={() => onFocusBlock(block.id)}
+          />
+        );
+      case "embed":
+        return (
+          <EmbedBlock
+            block={block}
+            onChangeUrl={(url) =>
+              onUpdateBlock(block.id, {
+                properties: { ...block.properties, url },
+              })
+            }
+            onChangeCaption={(caption) =>
+              onUpdateBlock(block.id, {
+                properties: { ...block.properties, caption },
               })
             }
             onFocus={() => onFocusBlock(block.id)}

@@ -22,7 +22,14 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database schemas verified and initialized.")
+    # Initialize Redis Pub/Sub if available
+    try:
+        await yjs_manager.get_redis()
+    except Exception as e:
+        logger.warning(f"Initial Redis connection deferred: {e}")
     yield
+    # Cleanup Redis connection and room listeners
+    await yjs_manager.close()
 
 
 app = FastAPI(

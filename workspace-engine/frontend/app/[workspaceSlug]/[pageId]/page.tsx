@@ -29,6 +29,24 @@ export default function DocumentPage() {
     let isMounted = true;
 
     async function loadPage() {
+      // 1. Optimistic offline-first local cache load
+      if (typeof window !== "undefined") {
+        try {
+          const cachedPage = localStorage.getItem(`offline_page_${pageId}`);
+          const cachedBlocks = localStorage.getItem(`offline_blocks_${pageId}`);
+          if (cachedPage && isMounted) {
+            const parsedPage = JSON.parse(cachedPage);
+            setPage(parsedPage);
+            setActivePage(parsedPage);
+          }
+          if (cachedBlocks && isMounted) {
+            setBlocks(JSON.parse(cachedBlocks));
+          }
+        } catch {
+          // Ignore cache parse errors
+        }
+      }
+
       setLoading(true);
       try {
         const [pageData, blockData] = await Promise.all([
@@ -40,9 +58,19 @@ export default function DocumentPage() {
           setPage(pageData);
           setBlocks(blockData);
           setActivePage(pageData);
+
+          // Save to local cache
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem(`offline_page_${pageId}`, JSON.stringify(pageData));
+              localStorage.setItem(`offline_blocks_${pageId}`, JSON.stringify(blockData));
+            } catch {
+              // Ignore storage quota errors
+            }
+          }
         }
       } catch (err) {
-        console.error("Failed to load page:", err);
+        console.warn("Failed to load page from API, using offline local state:", err);
       } finally {
         if (isMounted) setLoading(false);
       }
