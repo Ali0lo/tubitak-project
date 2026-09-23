@@ -4,6 +4,7 @@ A single dynamic route captures every request under /api/v1/... and
 forwards it to whichever downstream service owns that prefix,
 according to app.config.routes_table.
 """
+
 from fastapi import APIRouter, Request, Response
 
 from app.config.routes_table import is_public_path, resolve_target

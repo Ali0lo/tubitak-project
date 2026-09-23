@@ -1,4 +1,5 @@
 """Redis-backed fixed-window rate limiter."""
+
 from typing import Tuple
 
 from redis.asyncio import Redis

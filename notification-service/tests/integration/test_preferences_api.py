@@ -1,1 +1,1 @@
-""" tests/integration/test_preferences_api.py """
+"""tests/integration/test_preferences_api.py"""

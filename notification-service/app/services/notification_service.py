@@ -1,4 +1,5 @@
 """Business logic for scheduling, cancelling, and listing notifications."""
+
 import uuid
 from datetime import datetime, timezone
 from typing import List, Tuple
@@ -98,4 +99,3 @@ class NotificationService:
     async def mark_all_as_read(self, user_id: uuid.UUID) -> int:
         now = datetime.now(timezone.utc)
         return await self.notifications.mark_all_as_read(user_id, now)
-

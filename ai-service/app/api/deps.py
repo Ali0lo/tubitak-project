@@ -1,4 +1,5 @@
 """Shared FastAPI dependencies for the ai-service API layer."""
+
 import uuid
 from typing import Optional
 
@@ -19,9 +20,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user_id(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
-        bearer_scheme
-    ),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
 ) -> uuid.UUID:
     """Resolve the authenticated user's id from the access token."""
     if credentials is None:
@@ -32,15 +31,11 @@ async def get_current_user_id(
     try:
         return get_user_id_from_token(credentials.credentials)
     except AIServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
 async def get_access_token(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
-        bearer_scheme
-    ),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
 ) -> str:
     """Return the raw bearer token, forwarded to core-service by tools."""
     if credentials is None:

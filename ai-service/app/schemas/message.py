@@ -1,4 +1,5 @@
 """Pydantic schemas for message resources."""
+
 import uuid
 from datetime import datetime
 from typing import List, Optional

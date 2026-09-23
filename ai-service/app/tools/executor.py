@@ -6,6 +6,7 @@ act through. Handlers never touch the database directly — all state
 changes go through core-service's HTTP API, which independently
 enforces ownership.
 """
+
 import uuid
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Dict
@@ -25,9 +26,7 @@ class ToolContext:
 ToolHandler = Callable[[dict, ToolContext, CoreServiceClient], Awaitable[dict]]
 
 
-async def _create_task(
-    args: dict, ctx: ToolContext, client: CoreServiceClient
-) -> dict:
+async def _create_task(args: dict, ctx: ToolContext, client: CoreServiceClient) -> dict:
     return await client.create_task(
         ctx.access_token,
         title=args["title"],
@@ -38,9 +37,7 @@ async def _create_task(
     )
 
 
-async def _list_tasks(
-    args: dict, ctx: ToolContext, client: CoreServiceClient
-) -> dict:
+async def _list_tasks(args: dict, ctx: ToolContext, client: CoreServiceClient) -> dict:
     return await client.list_tasks(
         ctx.access_token,
         status=args.get("status"),
@@ -72,9 +69,7 @@ async def _bulk_complete_overdue_tasks(
     )
 
 
-async def _update_task(
-    args: dict, ctx: ToolContext, client: CoreServiceClient
-) -> dict:
+async def _update_task(args: dict, ctx: ToolContext, client: CoreServiceClient) -> dict:
     task_id = args["task_id"]
     return await client.update_task(
         ctx.access_token,
@@ -87,9 +82,7 @@ async def _update_task(
     )
 
 
-async def _delete_task(
-    args: dict, ctx: ToolContext, client: CoreServiceClient
-) -> dict:
+async def _delete_task(args: dict, ctx: ToolContext, client: CoreServiceClient) -> dict:
     await client.delete_task(ctx.access_token, args["task_id"])
     return {"status": "deleted", "task_id": args["task_id"]}
 
@@ -144,9 +137,7 @@ async def _create_reminder(
 async def _list_reminders(
     args: dict, ctx: ToolContext, client: CoreServiceClient
 ) -> dict:
-    return await client.list_reminders(
-        ctx.access_token, is_sent=args.get("is_sent")
-    )
+    return await client.list_reminders(ctx.access_token, is_sent=args.get("is_sent"))
 
 
 async def _delete_reminder(

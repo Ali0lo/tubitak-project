@@ -1,4 +1,5 @@
 """Core authentication business logic."""
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -78,9 +79,7 @@ class AuthService:
         stored = await self.tokens.get_by_jti(jti) if jti else None
         if stored is None or stored.revoked:
             raise InvalidTokenError()
-        if stored.expires_at.replace(tzinfo=timezone.utc) < datetime.now(
-            timezone.utc
-        ):
+        if stored.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
             raise InvalidTokenError("Refresh token expired")
         if stored.token_hash != hash_token(refresh_token):
             raise InvalidTokenError()
@@ -132,9 +131,7 @@ class AuthService:
         stored = await self.tokens.get_password_reset_token_by_hash(token_hash)
         if stored is None or stored.used:
             raise InvalidTokenError("Invalid or already used reset token")
-        if stored.expires_at.replace(tzinfo=timezone.utc) < datetime.now(
-            timezone.utc
-        ):
+        if stored.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
             raise InvalidTokenError("Reset token expired")
 
         user = await self.users.get_by_id(stored.user_id)
@@ -165,9 +162,7 @@ class AuthService:
         self, user: User, device_info: Optional[str]
     ) -> TokenResponse:
         access_token = create_access_token(subject=str(user.id))
-        refresh_token, jti, expires_at = create_refresh_token(
-            subject=str(user.id)
-        )
+        refresh_token, jti, expires_at = create_refresh_token(subject=str(user.id))
         await self.tokens.create_refresh_token(
             user_id=user.id,
             token_hash=hash_token(refresh_token),

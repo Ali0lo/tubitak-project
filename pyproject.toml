@@ -14,12 +14,13 @@ select = [
     "F",   # pyflakes
     "I",   # isort
     "B",   # flake8-bugbear
-    "UP",  # pyupgrade
     "C4",  # flake8-comprehensions
     "ASYNC", # flake8-async (blocking calls in async functions, etc.)
 ]
 ignore = [
     "B008", # function calls in argument defaults (standard FastAPI Depends() pattern)
+    "E501", # line length handled by formatter
+    "E712", # comparison to False/True used in SQLAlchemy query expressions
 ]
 
 [tool.ruff.lint.isort]

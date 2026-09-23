@@ -1,4 +1,5 @@
 """Email service for rendering and dispatching email notifications."""
+
 import logging
 from typing import Optional
 

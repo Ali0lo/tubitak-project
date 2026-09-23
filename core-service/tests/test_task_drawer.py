@@ -2,6 +2,7 @@
 
 Tests subtask CRUD/reorder, activity timeline, and comments thread.
 """
+
 import pytest
 from httpx import AsyncClient
 
@@ -14,9 +15,13 @@ TASK_PAYLOAD = {
 }
 
 
-async def test_subtask_crud_and_reorder(client: AsyncClient, auth_headers: dict) -> None:
+async def test_subtask_crud_and_reorder(
+    client: AsyncClient, auth_headers: dict
+) -> None:
     # 1. Create Task
-    task_res = await client.post("/api/v1/tasks", json=TASK_PAYLOAD, headers=auth_headers)
+    task_res = await client.post(
+        "/api/v1/tasks", json=TASK_PAYLOAD, headers=auth_headers
+    )
     assert task_res.status_code == 201
     task_id = task_res.json()["id"]
 
@@ -39,7 +44,9 @@ async def test_subtask_crud_and_reorder(client: AsyncClient, auth_headers: dict)
     st2 = st2_res.json()
 
     # 3. List Subtasks
-    list_res = await client.get(f"/api/v1/tasks/{task_id}/subtasks", headers=auth_headers)
+    list_res = await client.get(
+        f"/api/v1/tasks/{task_id}/subtasks", headers=auth_headers
+    )
     assert list_res.status_code == 200
     subtasks = list_res.json()
     assert len(subtasks) == 2
@@ -72,7 +79,9 @@ async def test_subtask_crud_and_reorder(client: AsyncClient, auth_headers: dict)
 
 async def test_task_activity_timeline(client: AsyncClient, auth_headers: dict) -> None:
     # 1. Create Task
-    task_res = await client.post("/api/v1/tasks", json=TASK_PAYLOAD, headers=auth_headers)
+    task_res = await client.post(
+        "/api/v1/tasks", json=TASK_PAYLOAD, headers=auth_headers
+    )
     task_id = task_res.json()["id"]
 
     # 2. Add subtask to generate activity log
@@ -83,7 +92,9 @@ async def test_task_activity_timeline(client: AsyncClient, auth_headers: dict) -
     )
 
     # 3. Get Activities
-    act_res = await client.get(f"/api/v1/tasks/{task_id}/activities", headers=auth_headers)
+    act_res = await client.get(
+        f"/api/v1/tasks/{task_id}/activities", headers=auth_headers
+    )
     assert act_res.status_code == 200
     activities = act_res.json()
     assert len(activities) >= 1
@@ -93,7 +104,9 @@ async def test_task_activity_timeline(client: AsyncClient, auth_headers: dict) -
 
 async def test_task_comments_thread(client: AsyncClient, auth_headers: dict) -> None:
     # 1. Create Task
-    task_res = await client.post("/api/v1/tasks", json=TASK_PAYLOAD, headers=auth_headers)
+    task_res = await client.post(
+        "/api/v1/tasks", json=TASK_PAYLOAD, headers=auth_headers
+    )
     task_id = task_res.json()["id"]
 
     # 2. Post Comment
@@ -108,7 +121,9 @@ async def test_task_comments_thread(client: AsyncClient, auth_headers: dict) -> 
     assert c_body["author_name"] == "Alice"
 
     # 3. List Comments
-    list_res = await client.get(f"/api/v1/tasks/{task_id}/comments", headers=auth_headers)
+    list_res = await client.get(
+        f"/api/v1/tasks/{task_id}/comments", headers=auth_headers
+    )
     assert list_res.status_code == 200
     comments = list_res.json()
     assert len(comments) == 1

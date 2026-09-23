@@ -1,13 +1,17 @@
 """Conversation ORM model for the ai schema."""
+
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.message import Message
 
 
 def _utcnow() -> datetime:
@@ -44,4 +48,6 @@ class Conversation(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Conversation id={self.id} user_id={self.user_id} title={self.title!r}>"
+        return (
+            f"<Conversation id={self.id} user_id={self.user_id} title={self.title!r}>"
+        )

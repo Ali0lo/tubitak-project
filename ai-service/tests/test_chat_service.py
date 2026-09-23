@@ -4,6 +4,7 @@ Requires TEST_DATABASE_URL (see conftest.py). The OpenAI and
 core-service calls are both faked, so no external network access is
 needed even though the database is real.
 """
+
 import uuid
 
 import httpx
@@ -14,7 +15,6 @@ from app.clients.core_service_client import CoreServiceClient
 from app.clients.openai_client import ChatCompletionResult, ToolCallRequest
 from app.core.exceptions import AgentLoopLimitError, ForbiddenError, NotFoundError
 from app.models.message import MessageRole
-from app.models.tool_call_log import ToolCallStatus
 from app.services.chat_service import ChatService
 from app.tools.executor import ToolExecutor
 from tests.conftest import FakeOpenAIClient
@@ -24,9 +24,7 @@ pytestmark = pytest.mark.asyncio
 
 def _core_client_with_handler(handler) -> CoreServiceClient:
     http_client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-    return CoreServiceClient(
-        base_url="http://core-service:8000", client=http_client
-    )
+    return CoreServiceClient(base_url="http://core-service:8000", client=http_client)
 
 
 async def test_simple_reply_with_no_tool_calls(db_session: AsyncSession) -> None:
@@ -90,9 +88,7 @@ async def test_tool_call_is_executed_and_looped_back(
     )
 
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            201, json={"id": "task-123", "title": "Buy milk"}
-        )
+        return httpx.Response(201, json={"id": "task-123", "title": "Buy milk"})
 
     tool_executor = ToolExecutor(_core_client_with_handler(handler))
     service = ChatService(db_session, fake_openai, tool_executor)
@@ -129,9 +125,7 @@ async def test_tool_call_failure_is_surfaced_to_model_not_raised(
                     )
                 ],
             ),
-            ChatCompletionResult(
-                content="I couldn't find that task.", tool_calls=[]
-            ),
+            ChatCompletionResult(content="I couldn't find that task.", tool_calls=[]),
         ]
     )
 
@@ -212,24 +206,18 @@ async def test_nonexistent_conversation_raises_not_found(
     service = ChatService(db_session, fake_openai, tool_executor)
 
     with pytest.raises(NotFoundError):
-        await service.send_message(
-            uuid.uuid4(), "fake-token", uuid.uuid4(), "hi"
-        )
+        await service.send_message(uuid.uuid4(), "fake-token", uuid.uuid4(), "hi")
 
 
 async def test_exceeding_max_tool_iterations_raises(
     db_session: AsyncSession,
 ) -> None:
-    settings_module = __import__(
-        "app.core.config", fromlist=["get_settings"]
-    )
+    settings_module = __import__("app.core.config", fromlist=["get_settings"])
     max_iterations = settings_module.get_settings().MAX_TOOL_ITERATIONS
 
     endless_tool_call = ChatCompletionResult(
         content=None,
-        tool_calls=[
-            ToolCallRequest(id="call_x", name="list_tasks", arguments={})
-        ],
+        tool_calls=[ToolCallRequest(id="call_x", name="list_tasks", arguments={})],
     )
     fake_openai = FakeOpenAIClient([endless_tool_call] * max_iterations)
     tool_executor = ToolExecutor(

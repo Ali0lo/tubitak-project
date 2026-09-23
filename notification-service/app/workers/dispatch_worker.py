@@ -1,6 +1,7 @@
 """Blocks on the dispatch queue and sends each notification as it
 arrives — email (if enabled) plus marking the row sent.
 """
+
 import asyncio
 import logging
 
@@ -38,6 +39,4 @@ async def run_dispatch_loop(queue: NotificationQueue) -> None:
                 dispatch_service = DispatchService(db, email_client, auth_client)
                 await dispatch_service.dispatch(notification_id)
         except Exception:  # noqa: BLE001
-            logger.exception(
-                "Failed to dispatch notification %s", notification_id
-            )
+            logger.exception("Failed to dispatch notification %s", notification_id)

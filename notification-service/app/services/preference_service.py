@@ -1,4 +1,5 @@
 """Business logic for notification preferences."""
+
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession

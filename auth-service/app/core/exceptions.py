@@ -25,9 +25,7 @@ class UserAlreadyExistsError(AuthServiceError):
     """Raised when attempting to register an email that is already in use."""
 
     def __init__(self) -> None:
-        super().__init__(
-            "A user with this email already exists", status_code=409
-        )
+        super().__init__("A user with this email already exists", status_code=409)
 
 
 class InvalidTokenError(AuthServiceError):

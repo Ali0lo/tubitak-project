@@ -1,4 +1,6 @@
 """Business logic for task management."""
+
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
@@ -7,30 +9,46 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenError, NotFoundError
-from app.models.task import Task, TaskPriority, TaskStatus
 from app.models.subtask import Subtask
+from app.models.task import Task, TaskPriority, TaskStatus
 from app.models.task_activity import TaskActivity
 from app.models.task_comment import TaskComment
 from app.repositories.task_repository import TaskRepository
-from app.schemas.task import TaskCreate, TaskUpdate
+from app.schemas.reminder import ReminderCreate
 from app.schemas.subtask import SubtaskCreate, SubtaskUpdate
+from app.schemas.task import TaskCreate, TaskUpdate
 from app.schemas.task_comment import TaskCommentCreate
 from app.services.reminder_service import ReminderService
-from app.schemas.reminder import ReminderCreate
+
+logger = logging.getLogger(__name__)
 
 
-def compute_next_due_date(base_date: Optional[datetime], rule: Optional[dict]) -> Optional[datetime]:
+def compute_next_due_date(
+    base_date: Optional[datetime], rule: Optional[dict]
+) -> Optional[datetime]:
     if not base_date or not rule:
         return None
 
-    freq = rule.get("frequency") if isinstance(rule, dict) else getattr(rule, "frequency", None)
+    freq = (
+        rule.get("frequency")
+        if isinstance(rule, dict)
+        else getattr(rule, "frequency", None)
+    )
     if hasattr(freq, "value"):
         freq = freq.value
     if not freq or freq == "none":
         return None
 
-    interval = rule.get("interval", 1) if isinstance(rule, dict) else getattr(rule, "interval", 1)
-    unit = rule.get("unit", "days") if isinstance(rule, dict) else getattr(rule, "unit", "days")
+    interval = (
+        rule.get("interval", 1)
+        if isinstance(rule, dict)
+        else getattr(rule, "interval", 1)
+    )
+    unit = (
+        rule.get("unit", "days")
+        if isinstance(rule, dict)
+        else getattr(rule, "unit", "days")
+    )
 
     if freq == "daily":
         return base_date + timedelta(days=1)
@@ -78,7 +96,9 @@ class TaskService:
 
     async def get_reminder_metadata(self, task_ids: List[uuid.UUID]) -> dict:
         now = datetime.now(timezone.utc)
-        return await self.reminder_service.reminders.get_task_reminder_metadata(task_ids, now)
+        return await self.reminder_service.reminders.get_task_reminder_metadata(
+            task_ids, now
+        )
 
     async def create_task(self, user_id: uuid.UUID, payload: TaskCreate) -> Task:
         recurrence_dict = None
@@ -107,7 +127,9 @@ class TaskService:
 
         return task
 
-    async def _schedule_default_task_reminders(self, user_id: uuid.UUID, task: Task) -> None:
+    async def _schedule_default_task_reminders(
+        self, user_id: uuid.UUID, task: Task
+    ) -> None:
         if not task.due_date:
             return
 
@@ -137,9 +159,12 @@ class TaskService:
                             message=msg,
                         ),
                     )
-                except Exception:
-                    pass  # Non-fatal if reminder fail
-            elif delta == timedelta(seconds=0) and abs((now - due_date).total_seconds()) < 300:
+                except Exception as exc:
+                    logger.debug("Failed to schedule task reminder: %s", exc)
+            elif (
+                delta == timedelta(seconds=0)
+                and abs((now - due_date).total_seconds()) < 300
+            ):
                 try:
                     await self.reminder_service.create_reminder(
                         user_id=user_id,
@@ -149,9 +174,8 @@ class TaskService:
                             message=msg,
                         ),
                     )
-                except Exception:
-                    pass
-
+                except Exception as exc:
+                    logger.debug("Failed to schedule task reminder: %s", exc)
 
     async def get_task(self, user_id: uuid.UUID, task_id: uuid.UUID) -> Task:
         task = await self.tasks.get_by_id(task_id)
@@ -200,7 +224,10 @@ class TaskService:
         clear_completed_at = False
         is_becoming_completed = False
 
-        if payload.status == TaskStatus.COMPLETED and task.status != TaskStatus.COMPLETED:
+        if (
+            payload.status == TaskStatus.COMPLETED
+            and task.status != TaskStatus.COMPLETED
+        ):
             completed_at = datetime.now(timezone.utc)
             is_becoming_completed = True
         elif payload.status is not None and payload.status != TaskStatus.COMPLETED:
@@ -214,7 +241,9 @@ class TaskService:
                 else dict(payload.recurrence_rule)
             )
 
-        due_date_changed = payload.due_date is not None and payload.due_date != task.due_date
+        due_date_changed = (
+            payload.due_date is not None and payload.due_date != task.due_date
+        )
 
         updated = await self.tasks.update(
             task,
@@ -235,7 +264,9 @@ class TaskService:
 
         # Handle Recurring Task completion (Part 7)
         if is_becoming_completed and updated.is_recurring and updated.recurrence_rule:
-            next_due = compute_next_due_date(updated.due_date or datetime.now(timezone.utc), updated.recurrence_rule)
+            next_due = compute_next_due_date(
+                updated.due_date or datetime.now(timezone.utc), updated.recurrence_rule
+            )
             if next_due:
                 tag_names = [t.name for t in updated.tags]
                 next_task = await self.tasks.create(
@@ -255,7 +286,10 @@ class TaskService:
         return updated
 
     async def bulk_reschedule_overdue(
-        self, user_id: uuid.UUID, new_due_date: datetime, task_ids: Optional[List[uuid.UUID]] = None
+        self,
+        user_id: uuid.UUID,
+        new_due_date: datetime,
+        task_ids: Optional[List[uuid.UUID]] = None,
     ) -> List[Task]:
         now = datetime.now(timezone.utc)
         if task_ids:
@@ -323,7 +357,11 @@ class TaskService:
         await self.db.commit()
 
     async def log_activity(
-        self, task_id: uuid.UUID, user_id: uuid.UUID, action: str, details: Optional[str] = None
+        self,
+        task_id: uuid.UUID,
+        user_id: uuid.UUID,
+        action: str,
+        details: Optional[str] = None,
     ) -> TaskActivity:
         activity = TaskActivity(
             task_id=task_id,
@@ -334,7 +372,9 @@ class TaskService:
         self.db.add(activity)
         return activity
 
-    async def get_activities(self, user_id: uuid.UUID, task_id: uuid.UUID) -> List[TaskActivity]:
+    async def get_activities(
+        self, user_id: uuid.UUID, task_id: uuid.UUID
+    ) -> List[TaskActivity]:
         await self.get_task(user_id, task_id)
         stmt = (
             select(TaskActivity)
@@ -345,7 +385,9 @@ class TaskService:
         return list(res.scalars().all())
 
     # Subtasks
-    async def list_subtasks(self, user_id: uuid.UUID, task_id: uuid.UUID) -> List[Subtask]:
+    async def list_subtasks(
+        self, user_id: uuid.UUID, task_id: uuid.UUID
+    ) -> List[Subtask]:
         await self.get_task(user_id, task_id)
         stmt = (
             select(Subtask)
@@ -369,16 +411,24 @@ class TaskService:
             position=max_pos + 1,
         )
         self.db.add(subtask)
-        await self.log_activity(task_id, user_id, "subtask_added", f"Added subtask '{payload.title}'")
+        await self.log_activity(
+            task_id, user_id, "subtask_added", f"Added subtask '{payload.title}'"
+        )
         await self.db.commit()
         await self.db.refresh(subtask)
         return subtask
 
     async def update_subtask(
-        self, user_id: uuid.UUID, task_id: uuid.UUID, subtask_id: uuid.UUID, payload: SubtaskUpdate
+        self,
+        user_id: uuid.UUID,
+        task_id: uuid.UUID,
+        subtask_id: uuid.UUID,
+        payload: SubtaskUpdate,
     ) -> Subtask:
         await self.get_task(user_id, task_id)
-        stmt = select(Subtask).where(Subtask.id == subtask_id, Subtask.task_id == task_id)
+        stmt = select(Subtask).where(
+            Subtask.id == subtask_id, Subtask.task_id == task_id
+        )
         res = await self.db.execute(stmt)
         subtask = res.scalar_one_or_none()
         if not subtask:
@@ -389,7 +439,9 @@ class TaskService:
         if payload.completed is not None and payload.completed != subtask.completed:
             subtask.completed = payload.completed
             action = "subtask_completed" if payload.completed else "subtask_uncompleted"
-            await self.log_activity(task_id, user_id, action, f"Subtask '{subtask.title}' updated")
+            await self.log_activity(
+                task_id, user_id, action, f"Subtask '{subtask.title}' updated"
+            )
         if payload.position is not None:
             subtask.position = payload.position
 
@@ -401,14 +453,18 @@ class TaskService:
         self, user_id: uuid.UUID, task_id: uuid.UUID, subtask_id: uuid.UUID
     ) -> None:
         await self.get_task(user_id, task_id)
-        stmt = select(Subtask).where(Subtask.id == subtask_id, Subtask.task_id == task_id)
+        stmt = select(Subtask).where(
+            Subtask.id == subtask_id, Subtask.task_id == task_id
+        )
         res = await self.db.execute(stmt)
         subtask = res.scalar_one_or_none()
         if not subtask:
             raise NotFoundError("Subtask not found")
 
         await self.db.delete(subtask)
-        await self.log_activity(task_id, user_id, "subtask_deleted", f"Deleted subtask '{subtask.title}'")
+        await self.log_activity(
+            task_id, user_id, "subtask_deleted", f"Deleted subtask '{subtask.title}'"
+        )
         await self.db.commit()
 
     async def reorder_subtasks(
@@ -423,7 +479,9 @@ class TaskService:
         return await self.list_subtasks(user_id, task_id)
 
     # Comments
-    async def list_comments(self, user_id: uuid.UUID, task_id: uuid.UUID) -> List[TaskComment]:
+    async def list_comments(
+        self, user_id: uuid.UUID, task_id: uuid.UUID
+    ) -> List[TaskComment]:
         await self.get_task(user_id, task_id)
         stmt = (
             select(TaskComment)
@@ -444,7 +502,7 @@ class TaskService:
             message=payload.message,
         )
         self.db.add(comment)
-        await self.log_activity(task_id, user_id, "comment_added", f"Added a comment")
+        await self.log_activity(task_id, user_id, "comment_added", "Added a comment")
         await self.db.commit()
         await self.db.refresh(comment)
         return comment
@@ -453,5 +511,3 @@ class TaskService:
     def _assert_owner(task: Task, user_id: uuid.UUID) -> None:
         if task.user_id != user_id:
             raise ForbiddenError("You do not have access to this task")
-
-

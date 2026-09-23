@@ -1,1 +1,1 @@
-""" app/api/v1/health.py """
+"""app/api/v1/health.py"""

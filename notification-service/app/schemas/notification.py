@@ -1,4 +1,5 @@
 """Pydantic schemas for notification resources."""
+
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -38,4 +39,3 @@ class NotificationResponse(BaseModel):
     failure_reason: Optional[str]
     created_at: datetime
     updated_at: datetime
-

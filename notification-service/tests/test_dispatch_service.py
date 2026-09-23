@@ -3,6 +3,7 @@
 Requires TEST_DATABASE_URL (see conftest.py). The email and auth
 clients are faked, so no real SMTP server or auth-service is needed.
 """
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
@@ -42,9 +43,7 @@ class FakeEmailClient:
         self.sent.append((to_email, content))
 
 
-async def _create_queued_notification(
-    db_session: AsyncSession, *, user_id: uuid.UUID
-):
+async def _create_queued_notification(db_session: AsyncSession, *, user_id: uuid.UUID):
     repository = NotificationRepository(db_session)
     notification = await repository.upsert(
         source="core-service",

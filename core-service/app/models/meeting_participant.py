@@ -1,1 +1,1 @@
-""" app/models/meeting_participant.py """
+"""app/models/meeting_participant.py"""

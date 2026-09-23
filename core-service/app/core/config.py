@@ -1,7 +1,9 @@
 """Application configuration loaded from environment variables."""
-from functools import lru_cache
-from typing import List
 
+from functools import lru_cache
+from typing import Any, List
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +17,15 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
     SERVICE_NAME: str = "core-service"
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def parse_debug(cls, v: Any) -> bool:
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            return v.lower() in ("true", "1", "t", "yes", "y")
+        return bool(v)
 
     DATABASE_URL: str
     REDIS_URL: str = "redis://localhost:6379/0"

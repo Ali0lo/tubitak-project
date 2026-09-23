@@ -1,4 +1,5 @@
 """JWT verification for access tokens issued by auth-service."""
+
 import uuid
 from typing import Any
 

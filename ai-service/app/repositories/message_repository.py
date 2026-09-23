@@ -1,4 +1,5 @@
 """Data access layer for the Message model."""
+
 import uuid
 from typing import List, Optional
 

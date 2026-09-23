@@ -1,4 +1,5 @@
 """Shared pytest fixtures for auth-service tests."""
+
 import asyncio
 import os
 from typing import AsyncGenerator
@@ -39,9 +40,9 @@ def event_loop():
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     engine = create_async_engine(os.environ["DATABASE_URL"])
     async with engine.begin() as conn:
-        await conn.execute(__import__("sqlalchemy").text(
-            "CREATE SCHEMA IF NOT EXISTS auth"
-        ))
+        await conn.execute(
+            __import__("sqlalchemy").text("CREATE SCHEMA IF NOT EXISTS auth")
+        )
         await conn.run_sync(Base.metadata.create_all)
 
     session_factory = async_sessionmaker(
@@ -65,9 +66,7 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides[get_db] = _override_get_db
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(
-        transport=transport, base_url="http://testserver"
-    ) as ac:
+    async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
         yield ac
 
     app.dependency_overrides.clear()

@@ -1,4 +1,5 @@
 """Data access layer for the ToolCallLog model."""
+
 import uuid
 from typing import Optional
 

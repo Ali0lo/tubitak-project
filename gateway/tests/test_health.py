@@ -1,4 +1,5 @@
 """Tests for gateway health endpoints."""
+
 import httpx
 import pytest
 from httpx import AsyncClient

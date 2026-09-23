@@ -1,4 +1,5 @@
 """HTTP client for core-service -> auth-service communication."""
+
 import logging
 import uuid
 from typing import Optional
@@ -19,7 +20,10 @@ class AuthClient:
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
-        self.base_url = (base_url or getattr(settings, "AUTH_SERVICE_URL", "http://auth-service:8000")).rstrip("/")
+        self.base_url = (
+            base_url
+            or getattr(settings, "AUTH_SERVICE_URL", "http://auth-service:8000")
+        ).rstrip("/")
         self.timeout = timeout or getattr(settings, "AUTH_SERVICE_TIMEOUT_SECONDS", 5.0)
 
     async def get_user_id_by_email(self, email: str) -> Optional[uuid.UUID]:

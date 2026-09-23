@@ -1,4 +1,5 @@
 """Declarative base class shared by all notification-service ORM models."""
+
 from sqlalchemy.orm import DeclarativeBase
 
 

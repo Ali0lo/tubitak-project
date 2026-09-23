@@ -6,6 +6,7 @@ endpoint directly (not through the gateway), authenticated with the
 shared INTERNAL_SERVICE_API_KEY rather than a user's own token, since
 this is a service-to-service call with no end-user request in flight.
 """
+
 import logging
 import uuid
 from typing import Optional

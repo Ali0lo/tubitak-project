@@ -1,4 +1,5 @@
 """NotificationPreference ORM model for the notification schema."""
+
 import uuid
 from datetime import datetime, timezone
 
@@ -31,9 +32,7 @@ class NotificationPreference(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), unique=True, nullable=False, index=True
     )
-    email_enabled: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False
-    )
+    email_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )

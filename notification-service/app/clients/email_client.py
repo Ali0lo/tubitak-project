@@ -3,6 +3,7 @@
 smtplib is synchronous; calls are offloaded to a thread via
 asyncio.to_thread so they don't block the event loop.
 """
+
 import asyncio
 import logging
 import smtplib
@@ -62,4 +63,8 @@ class EmailClient:
             if self.username and self.password:
                 server.login(self.username, self.password)
             server.sendmail(self.from_email, [to_email], message.as_string())
-            logger.info("Dispatched notification email to %s with subject: %s", to_email, content.subject)
+            logger.info(
+                "Dispatched notification email to %s with subject: %s",
+                to_email,
+                content.subject,
+            )

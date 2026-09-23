@@ -1,4 +1,5 @@
 """Meeting API routes."""
+
 import math
 import uuid
 from datetime import datetime, timezone
@@ -36,11 +37,16 @@ def format_overdue_duration(diff_seconds: float) -> str:
     return f"{months} month{'s' if months > 1 else ''} overdue"
 
 
-def serialize_meeting(meeting: Meeting, reminder_meta: Optional[dict] = None) -> MeetingResponse:
+def serialize_meeting(
+    meeting: Meeting, reminder_meta: Optional[dict] = None
+) -> MeetingResponse:
     response = MeetingResponse.model_validate(meeting)
     now = datetime.now(timezone.utc)
 
-    if meeting.end_time < now and meeting.status not in {MeetingStatus.COMPLETED, MeetingStatus.CANCELLED}:
+    if meeting.end_time < now and meeting.status not in {
+        MeetingStatus.COMPLETED,
+        MeetingStatus.CANCELLED,
+    }:
         response.is_overdue = True
         response.overdue_since = meeting.end_time
         diff = (now - meeting.end_time).total_seconds()
@@ -56,9 +62,7 @@ def serialize_meeting(meeting: Meeting, reminder_meta: Optional[dict] = None) ->
 router = APIRouter(prefix="/meetings", tags=["meetings"])
 
 
-@router.post(
-    "", response_model=MeetingResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=MeetingResponse, status_code=status.HTTP_201_CREATED)
 async def create_meeting(
     payload: MeetingCreate,
     user_id: uuid.UUID = Depends(get_current_user_id),
@@ -68,9 +72,7 @@ async def create_meeting(
         meeting = await meeting_service.create_meeting(user_id, payload)
         meta = await meeting_service.get_reminder_metadata([meeting.id])
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return serialize_meeting(meeting, meta.get(meeting.id))
 
 
@@ -120,9 +122,7 @@ async def get_meeting(
     try:
         meeting = await meeting_service.get_meeting(user_id, meeting_id)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return serialize_meeting(meeting)
 
 
@@ -136,9 +136,7 @@ async def update_meeting(
     try:
         meeting = await meeting_service.update_meeting(user_id, meeting_id, payload)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return serialize_meeting(meeting)
 
 
@@ -151,9 +149,7 @@ async def cancel_meeting(
     try:
         meeting = await meeting_service.cancel_meeting(user_id, meeting_id)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return serialize_meeting(meeting)
 
 
@@ -166,9 +162,7 @@ async def delete_meeting(
     try:
         await meeting_service.delete_meeting(user_id, meeting_id)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
 @router.patch(
@@ -187,8 +181,5 @@ async def update_participant_response(
             user_id, meeting_id, participant_id, payload.response_status
         )
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return serialize_meeting(meeting)
-

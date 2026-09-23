@@ -1,4 +1,6 @@
 """Business logic for meeting management."""
+
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
@@ -15,8 +17,10 @@ from app.models.meeting import (
 )
 from app.repositories.meeting_repository import MeetingRepository
 from app.schemas.meeting import MeetingCreate, MeetingUpdate
-from app.services.reminder_service import ReminderService
 from app.schemas.reminder import ReminderCreate
+from app.services.reminder_service import ReminderService
+
+logger = logging.getLogger(__name__)
 
 
 class MeetingService:
@@ -36,7 +40,9 @@ class MeetingService:
 
     async def get_reminder_metadata(self, meeting_ids: List[uuid.UUID]) -> dict:
         now = datetime.now(timezone.utc)
-        return await self.reminder_service.reminders.get_meeting_reminder_metadata(meeting_ids, now)
+        return await self.reminder_service.reminders.get_meeting_reminder_metadata(
+            meeting_ids, now
+        )
 
     async def create_meeting(
         self, user_id: uuid.UUID, payload: MeetingCreate
@@ -64,7 +70,9 @@ class MeetingService:
 
         return meeting
 
-    async def _schedule_default_meeting_reminders(self, user_id: uuid.UUID, meeting: Meeting) -> None:
+    async def _schedule_default_meeting_reminders(
+        self, user_id: uuid.UUID, meeting: Meeting
+    ) -> None:
         now = datetime.now(timezone.utc)
         start_time = meeting.start_time
         if start_time.tzinfo is None:
@@ -88,14 +96,26 @@ class MeetingService:
                         remind_at=now,
                         message=f"Meeting Invitation: You are included in '{meeting.title}'",
                     )
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Failed to schedule invitation notification: %s", exc)
 
         offsets = [
             ("1h", timedelta(hours=1), f"Meeting '{meeting.title}' starting in 1 hour"),
-            ("30m", timedelta(minutes=30), f"Meeting '{meeting.title}' starting in 30 minutes"),
-            ("15m", timedelta(minutes=15), f"Meeting '{meeting.title}' starting in 15 minutes"),
-            ("5m", timedelta(minutes=5), f"Meeting '{meeting.title}' starts in 5 minutes"),
+            (
+                "30m",
+                timedelta(minutes=30),
+                f"Meeting '{meeting.title}' starting in 30 minutes",
+            ),
+            (
+                "15m",
+                timedelta(minutes=15),
+                f"Meeting '{meeting.title}' starting in 15 minutes",
+            ),
+            (
+                "5m",
+                timedelta(minutes=5),
+                f"Meeting '{meeting.title}' starts in 5 minutes",
+            ),
             ("now", timedelta(seconds=0), f"Meeting '{meeting.title}' is starting now"),
         ]
 
@@ -122,8 +142,10 @@ class MeetingService:
                             remind_at=now,
                             message=short_notice_msg,
                         )
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug(
+                        "Failed to schedule short-notice notification: %s", exc
+                    )
 
             for key, delta, msg in offsets:
                 remind_at = start_time - delta
@@ -139,15 +161,22 @@ class MeetingService:
                                 ),
                             )
                         else:
-                            await self.notification_client.schedule_reminder_notification(
-                                reminder_id=f"{meeting.id}:{key}:{uid}",
-                                user_id=uid,
-                                remind_at=remind_at,
-                                message=msg,
+                            await (
+                                self.notification_client.schedule_reminder_notification(
+                                    reminder_id=f"{meeting.id}:{key}:{uid}",
+                                    user_id=uid,
+                                    remind_at=remind_at,
+                                    message=msg,
+                                )
                             )
-                    except Exception:
-                        pass
-                elif delta == timedelta(seconds=0) and abs((now - start_time).total_seconds()) < 300:
+                    except Exception as exc:
+                        logger.debug(
+                            "Failed to schedule reminder notification: %s", exc
+                        )
+                elif (
+                    delta == timedelta(seconds=0)
+                    and abs((now - start_time).total_seconds()) < 300
+                ):
                     try:
                         if uid == user_id:
                             await self.reminder_service.create_reminder(
@@ -159,16 +188,18 @@ class MeetingService:
                                 ),
                             )
                         else:
-                            await self.notification_client.schedule_reminder_notification(
-                                reminder_id=f"{meeting.id}:{key}:{uid}",
-                                user_id=uid,
-                                remind_at=now,
-                                message=msg,
+                            await (
+                                self.notification_client.schedule_reminder_notification(
+                                    reminder_id=f"{meeting.id}:{key}:{uid}",
+                                    user_id=uid,
+                                    remind_at=now,
+                                    message=msg,
+                                )
                             )
-                    except Exception:
-                        pass
-
-
+                    except Exception as exc:
+                        logger.debug(
+                            "Failed to schedule starting-now notification: %s", exc
+                        )
 
     async def get_meeting(self, user_id: uuid.UUID, meeting_id: uuid.UUID) -> Meeting:
         meeting = await self.meetings.get_by_id(meeting_id)
@@ -208,7 +239,9 @@ class MeetingService:
         self, user_id: uuid.UUID, meeting_id: uuid.UUID, payload: MeetingUpdate
     ) -> Meeting:
         meeting = await self.get_meeting(user_id, meeting_id)
-        start_time_changed = payload.start_time is not None and payload.start_time != meeting.start_time
+        start_time_changed = (
+            payload.start_time is not None and payload.start_time != meeting.start_time
+        )
 
         updated = await self.meetings.update(
             meeting,
@@ -248,7 +281,7 @@ class MeetingService:
         participant_id: uuid.UUID,
         response_status: ParticipantResponseStatus,
     ) -> Meeting:
-        meeting = await self.get_meeting(user_id, meeting_id)
+        await self.get_meeting(user_id, meeting_id)
         participant = await self.meetings.get_participant(meeting_id, participant_id)
         if participant is None:
             raise NotFoundError("Participant")
@@ -260,4 +293,3 @@ class MeetingService:
     def _assert_owner(meeting: Meeting, user_id: uuid.UUID) -> None:
         if meeting.user_id != user_id:
             raise ForbiddenError("You do not have access to this meeting")
-

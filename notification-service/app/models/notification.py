@@ -1,4 +1,5 @@
 """Notification ORM model for the notification schema."""
+
 import enum
 import uuid
 from datetime import datetime, timezone
@@ -54,16 +55,16 @@ class Notification(Base):
         DateTime(timezone=True), nullable=False, index=True
     )
     status: Mapped[NotificationStatus] = mapped_column(
-    SAEnum(
-        NotificationStatus,
-        name="notification_status",
-        schema="notification",
-        values_callable=lambda enum_cls: [e.value for e in enum_cls],
-    ),
-    default=NotificationStatus.PENDING,
-    nullable=False,
-    index=True,
-)
+        SAEnum(
+            NotificationStatus,
+            name="notification_status",
+            schema="notification",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        default=NotificationStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
     sent_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -73,9 +74,7 @@ class Notification(Base):
     read_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    failure_reason: Mapped[Optional[str]] = mapped_column(
-        String(1024), nullable=True
-    )
+    failure_reason: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )

@@ -5,15 +5,16 @@ practice — callers reach this directly on the internal network and
 authenticate with the shared internal API key rather than a user's
 access token.
 """
+
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.internal_deps import verify_internal_api_key
 from app.db.session import get_db
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(
     prefix="/internal",

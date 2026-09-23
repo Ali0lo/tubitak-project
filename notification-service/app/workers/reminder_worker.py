@@ -1,4 +1,5 @@
 """Worker process task for consuming and processing reminder notifications."""
+
 import logging
 
 from app.queue.redis_queue import NotificationQueue

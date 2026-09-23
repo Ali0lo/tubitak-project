@@ -1,4 +1,5 @@
 """Wrapper around the OpenAI chat completions API with tool calling."""
+
 import json
 from dataclasses import dataclass, field
 from typing import List, Optional

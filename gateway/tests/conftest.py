@@ -5,6 +5,7 @@ against test doubles: an httpx.MockTransport standing in for the four
 downstream services, and fakeredis standing in for Redis. No external
 infrastructure is required to run this suite.
 """
+
 import json
 from typing import AsyncGenerator, Callable
 

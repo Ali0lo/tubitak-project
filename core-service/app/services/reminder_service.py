@@ -1,4 +1,5 @@
 """Business logic for reminder management."""
+
 import uuid
 from typing import List, Optional, Tuple
 
@@ -114,9 +115,7 @@ class ReminderService:
             )
         return updated
 
-    async def delete_reminder(
-        self, user_id: uuid.UUID, reminder_id: uuid.UUID
-    ) -> None:
+    async def delete_reminder(self, user_id: uuid.UUID, reminder_id: uuid.UUID) -> None:
         reminder = await self.get_reminder(user_id, reminder_id)
         await self.reminders.delete(reminder)
         await self.db.commit()

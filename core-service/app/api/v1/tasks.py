@@ -1,4 +1,5 @@
 """Task API routes."""
+
 import math
 import uuid
 from datetime import datetime, timezone
@@ -51,7 +52,10 @@ def serialize_task(task: Task, reminder_meta: Optional[dict] = None) -> TaskResp
 
     if task.due_date:
         response.is_due_today = task.due_date.date() == now.date()
-        if task.due_date < now and task.status not in {TaskStatus.COMPLETED, TaskStatus.CANCELLED}:
+        if task.due_date < now and task.status not in {
+            TaskStatus.COMPLETED,
+            TaskStatus.CANCELLED,
+        }:
             response.is_overdue = True
             response.overdue_since = task.due_date
             diff = (now - task.due_date).total_seconds()
@@ -78,9 +82,7 @@ async def create_task(
         task = await task_service.create_task(user_id, payload)
         meta = await task_service.get_reminder_metadata([task.id])
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return serialize_task(task, meta.get(task.id))
 
 
@@ -136,9 +138,7 @@ async def bulk_reschedule_overdue_tasks(
             user_id, payload.new_due_date, payload.task_ids
         )
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return [serialize_task(t) for t in updated]
 
 
@@ -152,9 +152,7 @@ async def bulk_complete_overdue_tasks(
     try:
         completed = await task_service.bulk_complete_overdue(user_id, task_ids)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return [serialize_task(t) for t in completed]
 
 
@@ -167,9 +165,7 @@ async def get_task(
     try:
         task = await task_service.get_task(user_id, task_id)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return serialize_task(task)
 
 
@@ -183,9 +179,7 @@ async def update_task(
     try:
         task = await task_service.update_task(user_id, task_id, payload)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return serialize_task(task)
 
 
@@ -199,9 +193,7 @@ async def replace_task_tags(
     try:
         task = await task_service.replace_tags(user_id, task_id, tags)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return serialize_task(task)
 
 
@@ -214,9 +206,7 @@ async def delete_task(
     try:
         await task_service.delete_task(user_id, task_id)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
 # Subtasks Endpoints
@@ -233,7 +223,11 @@ async def list_subtasks(
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
-@router.post("/{task_id}/subtasks", response_model=SubtaskResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{task_id}/subtasks",
+    response_model=SubtaskResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_subtask(
     task_id: uuid.UUID,
     payload: SubtaskCreate,
@@ -256,13 +250,17 @@ async def update_subtask(
     task_service: TaskService = Depends(get_task_service),
 ) -> SubtaskResponse:
     try:
-        subtask = await task_service.update_subtask(user_id, task_id, subtask_id, payload)
+        subtask = await task_service.update_subtask(
+            user_id, task_id, subtask_id, payload
+        )
         return SubtaskResponse.model_validate(subtask)
     except CoreServiceError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
-@router.delete("/{task_id}/subtasks/{subtask_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{task_id}/subtasks/{subtask_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 async def delete_subtask(
     task_id: uuid.UUID,
     subtask_id: uuid.UUID,
@@ -283,7 +281,9 @@ async def reorder_subtasks(
     task_service: TaskService = Depends(get_task_service),
 ) -> List[SubtaskResponse]:
     try:
-        subtasks = await task_service.reorder_subtasks(user_id, task_id, payload.subtask_ids)
+        subtasks = await task_service.reorder_subtasks(
+            user_id, task_id, payload.subtask_ids
+        )
         return [SubtaskResponse.model_validate(s) for s in subtasks]
     except CoreServiceError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
@@ -317,7 +317,11 @@ async def list_comments(
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
-@router.post("/{task_id}/comments", response_model=TaskCommentResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{task_id}/comments",
+    response_model=TaskCommentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_comment(
     task_id: uuid.UUID,
     payload: TaskCommentCreate,
@@ -329,5 +333,3 @@ async def create_comment(
         return TaskCommentResponse.model_validate(comment)
     except CoreServiceError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
-
-

@@ -1,4 +1,5 @@
 """Pydantic schemas for task activity log."""
+
 import uuid
 from datetime import datetime
 from typing import Optional

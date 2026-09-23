@@ -1,1 +1,1 @@
-""" tests/unit/test_meeting_service.py """
+"""tests/unit/test_meeting_service.py"""

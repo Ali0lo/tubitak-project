@@ -1,4 +1,5 @@
 """Shared FastAPI dependencies for the notification-service API layer."""
+
 import uuid
 from typing import Optional
 
@@ -29,9 +30,7 @@ def get_redis_client() -> Redis:
 
 
 async def get_current_user_id(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
-        bearer_scheme
-    ),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
 ) -> uuid.UUID:
     if credentials is None:
         raise HTTPException(
@@ -41,9 +40,7 @@ async def get_current_user_id(
     try:
         return get_user_id_from_token(credentials.credentials)
     except NotificationServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
 
 async def get_notification_queue() -> NotificationQueue:

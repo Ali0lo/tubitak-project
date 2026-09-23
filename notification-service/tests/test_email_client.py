@@ -3,6 +3,7 @@
 Stubs out smtplib.SMTP entirely, so these run with no real SMTP server,
 database, or network access.
 """
+
 import os
 import smtplib
 
@@ -68,9 +69,7 @@ async def test_send_uses_configured_host_and_port(monkeypatch) -> None:
         host="smtp.example.com", port=2525, use_tls=False, from_email="a@x.com"
     )
 
-    await client.send(
-        to_email="user@example.com", content=render_reminder_email("hi")
-    )
+    await client.send(to_email="user@example.com", content=render_reminder_email("hi"))
 
     assert len(FakeSMTP.instances) == 1
     assert FakeSMTP.instances[0].host == "smtp.example.com"
@@ -81,9 +80,7 @@ async def test_send_starts_tls_when_enabled(monkeypatch) -> None:
     monkeypatch.setattr("app.clients.email_client.smtplib.SMTP", FakeSMTP)
     client = EmailClient(use_tls=True)
 
-    await client.send(
-        to_email="user@example.com", content=render_reminder_email("hi")
-    )
+    await client.send(to_email="user@example.com", content=render_reminder_email("hi"))
 
     assert FakeSMTP.instances[0].started_tls is True
 
@@ -92,9 +89,7 @@ async def test_send_logs_in_when_credentials_provided(monkeypatch) -> None:
     monkeypatch.setattr("app.clients.email_client.smtplib.SMTP", FakeSMTP)
     client = EmailClient(username="user", password="pass", use_tls=False)
 
-    await client.send(
-        to_email="user@example.com", content=render_reminder_email("hi")
-    )
+    await client.send(to_email="user@example.com", content=render_reminder_email("hi"))
 
     assert FakeSMTP.instances[0].login_args == ("user", "pass")
 

@@ -1,4 +1,5 @@
 """Pydantic schemas for task resources."""
+
 import enum
 import uuid
 from datetime import datetime
@@ -117,4 +118,3 @@ class TaskFilterParams(BaseModel):
     today_only: Optional[bool] = None
     upcoming_only: Optional[bool] = None
     recurring_only: Optional[bool] = None
-

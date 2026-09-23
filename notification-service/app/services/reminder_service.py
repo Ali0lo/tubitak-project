@@ -1,7 +1,7 @@
 """Service layer for reminder scheduling and management."""
+
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

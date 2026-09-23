@@ -1,4 +1,5 @@
 """Pydantic schemas for authentication requests."""
+
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -26,4 +27,3 @@ class VerifyEmailRequest(BaseModel):
 
 class ResendVerificationRequest(BaseModel):
     email: EmailStr
-

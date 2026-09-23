@@ -1,4 +1,5 @@
 """Health check routes."""
+
 import httpx
 from fastapi import APIRouter, Request
 

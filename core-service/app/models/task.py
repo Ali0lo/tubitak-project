@@ -1,15 +1,21 @@
 """Task and TaskTag ORM models for the core schema."""
+
 import enum
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, JSON, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.subtask import Subtask
+    from app.models.task_activity import TaskActivity
+    from app.models.task_comment import TaskComment
 
 
 def _utcnow() -> datetime:
@@ -45,26 +51,26 @@ class Task(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[TaskStatus] = mapped_column(
-    SAEnum(
-        TaskStatus,
-        name="task_status",
-        schema="core",
-        values_callable=lambda enum: [e.value for e in enum],
-    ),
-    default=TaskStatus.PENDING,
-    nullable=False,
-    index=True,
-)
+        SAEnum(
+            TaskStatus,
+            name="task_status",
+            schema="core",
+            values_callable=lambda enum: [e.value for e in enum],
+        ),
+        default=TaskStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
     priority: Mapped[TaskPriority] = mapped_column(
-    SAEnum(
-        TaskPriority,
-        name="task_priority",
-        schema="core",
-        values_callable=lambda enum: [e.value for e in enum],
-    ),
-    default=TaskPriority.MEDIUM,
-    nullable=False,
-)
+        SAEnum(
+            TaskPriority,
+            name="task_priority",
+            schema="core",
+            values_callable=lambda enum: [e.value for e in enum],
+        ),
+        default=TaskPriority.MEDIUM,
+        nullable=False,
+    )
     due_date: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
@@ -74,9 +80,7 @@ class Task(Base):
     is_recurring: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, index=True
     )
-    recurrence_rule: Mapped[Optional[dict]] = mapped_column(
-        JSON, nullable=True
-    )
+    recurrence_rule: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     recurrence_parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("core.tasks.id", ondelete="SET NULL"),
@@ -97,13 +101,22 @@ class Task(Base):
         back_populates="task", cascade="all, delete-orphan"
     )
     subtasks: Mapped[List["Subtask"]] = relationship(
-        "Subtask", back_populates="task", cascade="all, delete-orphan", order_by="Subtask.position"
+        "Subtask",
+        back_populates="task",
+        cascade="all, delete-orphan",
+        order_by="Subtask.position",
     )
     activities: Mapped[List["TaskActivity"]] = relationship(
-        "TaskActivity", back_populates="task", cascade="all, delete-orphan", order_by="TaskActivity.created_at.desc()"
+        "TaskActivity",
+        back_populates="task",
+        cascade="all, delete-orphan",
+        order_by="TaskActivity.created_at.desc()",
     )
     comments: Mapped[List["TaskComment"]] = relationship(
-        "TaskComment", back_populates="task", cascade="all, delete-orphan", order_by="TaskComment.created_at.asc()"
+        "TaskComment",
+        back_populates="task",
+        cascade="all, delete-orphan",
+        order_by="TaskComment.created_at.asc()",
     )
 
     def __repr__(self) -> str:

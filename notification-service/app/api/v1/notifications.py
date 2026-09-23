@@ -7,6 +7,7 @@ by the shared internal API key rather than a user's access token.
 The rest are end-user endpoints, authenticated the same way as every
 other service.
 """
+
 import math
 import uuid
 
@@ -52,9 +53,7 @@ async def cancel_notification(
     try:
         notification = await notification_service.cancel(source, source_reference_id)
     except NotificationServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return NotificationResponse.model_validate(notification)
 
 
@@ -104,13 +103,9 @@ async def get_notification(
     notification_service: NotificationService = Depends(get_notification_service),
 ) -> NotificationResponse:
     try:
-        notification = await notification_service.get_for_user(
-            user_id, notification_id
-        )
+        notification = await notification_service.get_for_user(user_id, notification_id)
     except NotificationServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return NotificationResponse.model_validate(notification)
 
 
@@ -121,12 +116,7 @@ async def mark_as_read(
     notification_service: NotificationService = Depends(get_notification_service),
 ) -> NotificationResponse:
     try:
-        notification = await notification_service.mark_as_read(
-            user_id, notification_id
-        )
+        notification = await notification_service.mark_as_read(user_id, notification_id)
     except NotificationServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return NotificationResponse.model_validate(notification)
-

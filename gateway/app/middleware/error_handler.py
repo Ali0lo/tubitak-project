@@ -1,4 +1,5 @@
 """Global exception handlers for the gateway FastAPI app."""
+
 import logging
 
 from fastapi import FastAPI, Request, status

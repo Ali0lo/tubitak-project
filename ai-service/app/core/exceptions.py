@@ -27,14 +27,18 @@ class NotFoundError(AIServiceError):
 class ForbiddenError(AIServiceError):
     """Raised when a user attempts to access a conversation they don't own."""
 
-    def __init__(self, message: str = "You do not have access to this resource") -> None:
+    def __init__(
+        self, message: str = "You do not have access to this resource"
+    ) -> None:
         super().__init__(message, status_code=403)
 
 
 class OpenAIRequestError(AIServiceError):
     """Raised when the OpenAI API call fails or times out."""
 
-    def __init__(self, message: str = "The AI assistant is temporarily unavailable") -> None:
+    def __init__(
+        self, message: str = "The AI assistant is temporarily unavailable"
+    ) -> None:
         super().__init__(message, status_code=502)
 
 

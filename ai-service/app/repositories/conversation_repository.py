@@ -1,4 +1,5 @@
 """Data access layer for the Conversation model."""
+
 import uuid
 from typing import List, Optional, Tuple
 
@@ -32,11 +33,7 @@ class ConversationRepository:
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total = (await self.db.execute(count_stmt)).scalar_one()
 
-        stmt = (
-            stmt.order_by(Conversation.updated_at.desc())
-            .offset(offset)
-            .limit(limit)
-        )
+        stmt = stmt.order_by(Conversation.updated_at.desc()).offset(offset).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all()), total
 

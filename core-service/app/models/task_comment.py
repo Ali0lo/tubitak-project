@@ -1,12 +1,17 @@
 """TaskComment ORM model for core schema."""
+
 import uuid
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.task import Task
 
 
 def _utcnow() -> datetime:
@@ -31,7 +36,9 @@ class TaskComment(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), nullable=False, index=True
     )
-    author_name: Mapped[str] = mapped_column(String(128), default="User", nullable=False)
+    author_name: Mapped[str] = mapped_column(
+        String(128), default="User", nullable=False
+    )
     message: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False

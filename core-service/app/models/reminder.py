@@ -1,4 +1,5 @@
 """Reminder ORM model for the core schema."""
+
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -62,4 +63,6 @@ class Reminder(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Reminder id={self.id} remind_at={self.remind_at} is_sent={self.is_sent}>"
+        return (
+            f"<Reminder id={self.id} remind_at={self.remind_at} is_sent={self.is_sent}>"
+        )

@@ -1,4 +1,5 @@
 """Shared pagination request/response schemas."""
+
 from typing import Generic, List, TypeVar
 
 from pydantic import BaseModel, Field

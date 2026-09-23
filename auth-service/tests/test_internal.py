@@ -2,6 +2,7 @@
 
 Requires TEST_DATABASE_URL (see conftest.py).
 """
+
 import uuid
 
 import pytest

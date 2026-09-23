@@ -1,8 +1,7 @@
 """Unit tests for EmailService, TemplateService, and ReminderService."""
-import pytest
-from unittest.mock import AsyncMock, MagicMock
 
-from app.clients.email_client import EmailClient
+import pytest
+
 from app.core.exceptions import EmailDispatchError
 from app.services.email_service import EmailService
 from app.services.template_service import TemplateService
@@ -69,6 +68,8 @@ async def test_template_service_render_reminder() -> None:
 
 
 async def test_template_service_render_notification() -> None:
-    rendered = TemplateService.render_notification("Notice message", title="System Alert")
+    rendered = TemplateService.render_notification(
+        "Notice message", title="System Alert"
+    )
     assert rendered.subject == "System Alert"
     assert "Notice message" in rendered.text_body

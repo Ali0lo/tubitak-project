@@ -5,6 +5,7 @@ engine — the content here is a single short notice, not a document,
 so the added dependency and indirection of Jinja2 wouldn't earn its
 keep.
 """
+
 from dataclasses import dataclass
 
 

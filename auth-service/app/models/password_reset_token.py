@@ -1,12 +1,17 @@
 """PasswordResetToken ORM model for the auth schema."""
+
 import uuid
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 def _utcnow() -> datetime:
@@ -28,9 +33,7 @@ class PasswordResetToken(Base):
         nullable=False,
         index=True,
     )
-    token_hash: Mapped[str] = mapped_column(
-        String(64), unique=True, nullable=False
-    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
@@ -42,4 +45,6 @@ class PasswordResetToken(Base):
     user: Mapped["User"] = relationship(back_populates="password_reset_tokens")
 
     def __repr__(self) -> str:
-        return f"<PasswordResetToken id={self.id} user_id={self.user_id} used={self.used}>"
+        return (
+            f"<PasswordResetToken id={self.id} user_id={self.user_id} used={self.used}>"
+        )

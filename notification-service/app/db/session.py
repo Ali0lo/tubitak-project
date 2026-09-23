@@ -1,4 +1,5 @@
 """Async SQLAlchemy engine and session factory for notification-service."""
+
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (

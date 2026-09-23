@@ -6,6 +6,7 @@ endpoints implement. Failures here are logged and swallowed rather than
 raised, so that a temporary notification-service outage never blocks a
 task/meeting/reminder write in core-service.
 """
+
 import logging
 import uuid
 from datetime import datetime
@@ -57,9 +58,7 @@ class NotificationClient:
                 response = await client.post(
                     "/api/v1/notifications/schedule",
                     json=payload,
-                    headers={
-                        "X-Internal-Api-Key": settings.INTERNAL_SERVICE_API_KEY
-                    },
+                    headers={"X-Internal-Api-Key": settings.INTERNAL_SERVICE_API_KEY},
                 )
                 response.raise_for_status()
             return True
@@ -79,9 +78,7 @@ class NotificationClient:
             ) as client:
                 response = await client.post(
                     f"/api/v1/notifications/source/core-service/{reminder_id}/cancel",
-                    headers={
-                        "X-Internal-Api-Key": settings.INTERNAL_SERVICE_API_KEY
-                    },
+                    headers={"X-Internal-Api-Key": settings.INTERNAL_SERVICE_API_KEY},
                 )
                 response.raise_for_status()
             return True

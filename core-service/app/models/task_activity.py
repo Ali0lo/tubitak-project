@@ -1,12 +1,17 @@
 """TaskActivity ORM model for core schema."""
+
 import uuid
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.task import Task
 
 
 def _utcnow() -> datetime:
@@ -40,4 +45,6 @@ class TaskActivity(Base):
     task: Mapped["Task"] = relationship("Task", back_populates="activities")
 
     def __repr__(self) -> str:
-        return f"<TaskActivity id={self.id} action={self.action!r} task_id={self.task_id}>"
+        return (
+            f"<TaskActivity id={self.id} action={self.action!r} task_id={self.task_id}>"
+        )

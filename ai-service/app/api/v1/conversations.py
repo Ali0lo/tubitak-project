@@ -1,4 +1,5 @@
 """Conversation API routes."""
+
 import math
 import uuid
 
@@ -48,9 +49,7 @@ async def get_conversation(
             user_id, conversation_id
         )
     except AIServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return ConversationDetail.model_validate(conversation)
 
 
@@ -66,9 +65,7 @@ async def update_conversation(
             user_id, conversation_id, payload
         )
     except AIServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return ConversationSummary.model_validate(conversation)
 
 
@@ -81,6 +78,4 @@ async def delete_conversation(
     try:
         await conversation_service.delete_conversation(user_id, conversation_id)
     except AIServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc

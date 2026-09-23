@@ -1,4 +1,5 @@
 """Password hashing and JWT encoding/decoding utilities."""
+
 import hashlib
 import uuid
 from datetime import datetime, timedelta, timezone

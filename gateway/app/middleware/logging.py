@@ -1,4 +1,5 @@
 """Structured request/response logging middleware."""
+
 import logging
 import time
 import uuid

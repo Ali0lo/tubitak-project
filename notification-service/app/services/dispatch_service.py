@@ -2,6 +2,7 @@
 address is on file) plus marking the row sent so it's visible via the
 in-app notifications list either way.
 """
+
 import logging
 import uuid
 from datetime import datetime, timezone

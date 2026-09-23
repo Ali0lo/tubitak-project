@@ -1,4 +1,5 @@
 """Pydantic schemas for the chat endpoint."""
+
 import uuid
 from typing import List, Optional
 

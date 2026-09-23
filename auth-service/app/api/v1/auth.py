@@ -1,4 +1,5 @@
 """Authentication API routes."""
+
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -60,9 +61,7 @@ async def register(
         # Create initial email verification token
         await verification_service.create_verification_token(user)
     except AuthServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return UserResponse.model_validate(user)
 
 
@@ -80,9 +79,7 @@ async def login(
             device_info=request.headers.get("user-agent"),
         )
     except AuthServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     _set_refresh_cookie(response, tokens.refresh_token)
     return tokens
 
@@ -107,9 +104,7 @@ async def refresh(
             token, device_info=request.headers.get("user-agent")
         )
     except AuthServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     _set_refresh_cookie(response, tokens.refresh_token)
     return tokens
 
@@ -161,7 +156,9 @@ async def resend_verification(
     user = await auth_service.users.get_by_email(payload.email)
     if user and not user.is_verified:
         await verification_service.resend_verification(user)
-    return {"message": "If the email is unverified, a verification token has been generated"}
+    return {
+        "message": "If the email is unverified, a verification token has been generated"
+    }
 
 
 @router.post("/password-reset/request", status_code=status.HTTP_202_ACCEPTED)
@@ -179,12 +176,7 @@ async def confirm_password_reset(
     auth_service: AuthService = Depends(get_auth_service),
 ) -> dict[str, str]:
     try:
-        await auth_service.confirm_password_reset(
-            payload.token, payload.new_password
-        )
+        await auth_service.confirm_password_reset(payload.token, payload.new_password)
     except AuthServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return {"message": "Password has been reset successfully"}
-

@@ -2,6 +2,7 @@
 
 No real Redis, database, or network access required.
 """
+
 import os
 import uuid
 

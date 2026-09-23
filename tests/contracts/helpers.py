@@ -29,6 +29,7 @@ BASE_ENV = {
     "JWT_SECRET_KEY": "contract-test-secret",
     "INTERNAL_SERVICE_API_KEY": "contract-test-internal-key",
     "OPENAI_API_KEY": "sk-contract-test-not-real",
+    "DEBUG": "false",
 }
 
 

@@ -1,4 +1,5 @@
 """Template service for constructing rendered email objects."""
+
 from typing import Optional
 
 from app.templates.notification_email import RenderedEmail, render_reminder_email

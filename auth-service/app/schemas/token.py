@@ -1,4 +1,5 @@
 """Pydantic schemas for token responses."""
+
 from pydantic import BaseModel
 
 

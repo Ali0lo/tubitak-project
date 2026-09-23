@@ -1,4 +1,5 @@
 """Data access layer for the Reminder model."""
+
 import uuid
 from datetime import datetime
 from typing import List, Optional, Tuple
@@ -103,7 +104,7 @@ class ReminderRepository:
     ) -> dict:
         if not task_ids:
             return {}
-        
+
         # Next upcoming unsent reminder
         next_stmt = (
             select(Reminder.task_id, func.min(Reminder.remind_at))
@@ -177,4 +178,3 @@ class ReminderRepository:
     async def delete(self, reminder: Reminder) -> None:
         await self.db.delete(reminder)
         await self.db.flush()
-

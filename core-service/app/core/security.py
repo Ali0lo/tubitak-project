@@ -4,6 +4,7 @@ core-service does not issue tokens itself; it only verifies access
 tokens using the shared JWT_SECRET_KEY, avoiding a network call to
 auth-service on every request.
 """
+
 import uuid
 from typing import Any
 

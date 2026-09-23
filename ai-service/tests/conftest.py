@@ -6,6 +6,7 @@ fixture. Tests in test_tool_definitions.py, test_core_service_client.py,
 and test_tool_executor.py do not use this file's DB fixtures and run
 without any external infrastructure.
 """
+
 import asyncio
 import os
 import uuid
@@ -32,7 +33,7 @@ os.environ.setdefault(
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-unit-tests-only")
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-not-a-real-key")
 
-from app.clients.openai_client import ChatCompletionResult, ToolCallRequest  # noqa: E402
+from app.clients.openai_client import ChatCompletionResult  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402
@@ -56,9 +57,7 @@ class FakeOpenAIClient:
     async def complete(self, messages, tools) -> ChatCompletionResult:
         self.calls.append({"messages": messages, "tools": tools})
         if not self._results:
-            raise AssertionError(
-                "FakeOpenAIClient ran out of scripted results"
-            )
+            raise AssertionError("FakeOpenAIClient ran out of scripted results")
         return self._results.pop(0)
 
 

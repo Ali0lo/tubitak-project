@@ -1,1 +1,1 @@
-""" app/schemas/schedule.py """
+"""app/schemas/schedule.py"""

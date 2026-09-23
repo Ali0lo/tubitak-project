@@ -1,4 +1,5 @@
 """Integration tests for the meeting API."""
+
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -16,9 +17,7 @@ def _meeting_payload() -> dict:
         "location": "Zoom",
         "start_time": start.isoformat(),
         "end_time": end.isoformat(),
-        "participants": [
-            {"email": "teammate@example.com", "name": "Teammate"}
-        ],
+        "participants": [{"email": "teammate@example.com", "name": "Teammate"}],
     }
 
 
@@ -39,9 +38,7 @@ async def test_create_meeting_rejects_invalid_time_range(
 ) -> None:
     payload = _meeting_payload()
     payload["end_time"] = payload["start_time"]
-    response = await client.post(
-        "/api/v1/meetings", json=payload, headers=auth_headers
-    )
+    response = await client.post("/api/v1/meetings", json=payload, headers=auth_headers)
     assert response.status_code == 422
 
 
@@ -87,9 +84,7 @@ async def test_list_meetings_filters_by_status(
         "/api/v1/meetings", json=_meeting_payload(), headers=auth_headers
     )
     meeting_id = create_response.json()["id"]
-    await client.post(
-        f"/api/v1/meetings/{meeting_id}/cancel", headers=auth_headers
-    )
+    await client.post(f"/api/v1/meetings/{meeting_id}/cancel", headers=auth_headers)
 
     response = await client.get(
         "/api/v1/meetings", params={"status": "cancelled"}, headers=auth_headers

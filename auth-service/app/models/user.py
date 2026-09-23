@@ -1,13 +1,19 @@
 """User ORM model for the auth schema."""
+
 import uuid
 from datetime import datetime, timezone
-from typing import List
-from typing import List
+from typing import TYPE_CHECKING, List
+
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.email_verification_token import EmailVerificationToken
+    from app.models.password_reset_token import PasswordResetToken
+    from app.models.refresh_token import RefreshToken
 
 
 def _utcnow() -> datetime:
@@ -28,12 +34,8 @@ class User(Base):
     )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False
-    )
-    is_verified: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )

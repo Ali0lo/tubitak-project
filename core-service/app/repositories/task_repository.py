@@ -1,4 +1,5 @@
 """Data access layer for the Task and TaskTag models."""
+
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
@@ -54,9 +55,11 @@ class TaskRepository:
         if due_after is not None:
             stmt = stmt.where(Task.due_date >= due_after)
         if tag is not None:
-            stmt = stmt.join(Task.tags).where(
-                TaskTag.name == tag.strip().lower()
-            ).distinct()
+            stmt = (
+                stmt.join(Task.tags)
+                .where(TaskTag.name == tag.strip().lower())
+                .distinct()
+            )
 
         if overdue_only:
             stmt = stmt.where(
@@ -65,8 +68,12 @@ class TaskRepository:
                 Task.status.not_in([TaskStatus.COMPLETED, TaskStatus.CANCELLED]),
             )
         elif today_only:
-            start_of_day = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_of_day = current_time.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_of_day = current_time.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            end_of_day = current_time.replace(
+                hour=23, minute=59, second=59, microsecond=999999
+            )
             stmt = stmt.where(
                 Task.due_date.is_not(None),
                 Task.due_date >= start_of_day,

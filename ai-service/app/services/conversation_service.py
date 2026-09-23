@@ -1,4 +1,5 @@
 """Business logic for conversation management."""
+
 import uuid
 from typing import List, Tuple
 

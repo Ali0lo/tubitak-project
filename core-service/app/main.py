@@ -1,4 +1,5 @@
 """Core-service FastAPI application entrypoint."""
+
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -19,12 +20,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application startup/shutdown hooks."""
     import asyncio
     import logging
-    import subprocess
+    import subprocess  # nosec B404
 
     logger = logging.getLogger("core-service.startup")
     try:
+
         def run_alembic():
-            res = subprocess.run(["alembic", "upgrade", "head"], capture_output=True, text=True)
+            res = subprocess.run(  # nosec B603, B607
+                ["alembic", "upgrade", "head"], capture_output=True, text=True
+            )
             if res.returncode != 0:
                 logger.warning(f"Alembic migration warning: {res.stderr}")
             else:

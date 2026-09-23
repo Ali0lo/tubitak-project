@@ -5,6 +5,7 @@ TEST_DATABASE_URL to point at a disposable test database before
 running `pytest`. The auth schema and tables are created and torn
 down automatically by the db_session fixture in conftest.py.
 """
+
 import pytest
 from httpx import AsyncClient
 
@@ -173,4 +174,3 @@ async def test_verify_email_invalid_token_returns_400(client: AsyncClient) -> No
     )
     assert response.status_code == 400
     assert "Invalid or expired" in response.json()["detail"]
-

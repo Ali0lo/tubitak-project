@@ -1,4 +1,5 @@
 """Chat API route — the primary interface to the AI assistant."""
+
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -33,14 +34,10 @@ async def chat(
             user_timezone=payload.user_timezone,
         )
     except AIServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 
     return ChatResponse(
         conversation_id=conversation.id,
         message=MessageResponse.model_validate(final_message),
-        tool_messages=[
-            MessageResponse.model_validate(m) for m in tool_messages
-        ],
+        tool_messages=[MessageResponse.model_validate(m) for m in tool_messages],
     )

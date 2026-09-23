@@ -1,4 +1,5 @@
 """Unit tests for notification email rendering."""
+
 from app.templates.notification_email import render_reminder_email
 
 

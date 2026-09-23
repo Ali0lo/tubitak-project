@@ -5,6 +5,7 @@ Runs as an independent long-lived loop, separate from both the HTTP
 API process and the dispatch worker, so a slow SMTP server never
 delays claiming newly-due notifications.
 """
+
 import asyncio
 import logging
 from datetime import datetime, timezone

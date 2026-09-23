@@ -1,4 +1,5 @@
 """Data access layer for the User model."""
+
 import uuid
 from typing import Optional
 
@@ -19,17 +20,11 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_by_email(self, email: str) -> Optional[User]:
-        result = await self.db.execute(
-            select(User).where(User.email == email)
-        )
+        result = await self.db.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
-    async def create(
-        self, *, email: str, hashed_password: str, full_name: str
-    ) -> User:
-        user = User(
-            email=email, hashed_password=hashed_password, full_name=full_name
-        )
+    async def create(self, *, email: str, hashed_password: str, full_name: str) -> User:
+        user = User(email=email, hashed_password=hashed_password, full_name=full_name)
         self.db.add(user)
         await self.db.flush()
         await self.db.refresh(user)

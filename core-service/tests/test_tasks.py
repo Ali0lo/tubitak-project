@@ -4,6 +4,7 @@ Requires TEST_DATABASE_URL pointed at a disposable Postgres instance;
 the core schema/tables are created and torn down by the db_session
 fixture in conftest.py.
 """
+
 import pytest
 from httpx import AsyncClient
 
@@ -75,9 +76,7 @@ async def test_get_task_owned_by_another_user_is_forbidden(
     )
     other_user_headers = {"Authorization": f"Bearer {other_token}"}
 
-    response = await client.get(
-        f"/api/v1/tasks/{task_id}", headers=other_user_headers
-    )
+    response = await client.get(f"/api/v1/tasks/{task_id}", headers=other_user_headers)
     assert response.status_code == 403
 
 
@@ -135,7 +134,5 @@ async def test_delete_task(client: AsyncClient, auth_headers: dict) -> None:
     )
     assert delete_response.status_code == 204
 
-    get_response = await client.get(
-        f"/api/v1/tasks/{task_id}", headers=auth_headers
-    )
+    get_response = await client.get(f"/api/v1/tasks/{task_id}", headers=auth_headers)
     assert get_response.status_code == 404

@@ -3,6 +3,7 @@
 Each entry follows the OpenAI `tools` schema. Names here must exactly
 match the keys registered in app.tools.executor.TOOL_HANDLERS.
 """
+
 from typing import List
 
 TOOL_DEFINITIONS: List[dict] = [
@@ -62,10 +63,22 @@ TOOL_DEFINITIONS: List[dict] = [
                         "enum": ["low", "medium", "high", "urgent"],
                     },
                     "tag": {"type": "string"},
-                    "overdue": {"type": "boolean", "description": "Set to true to show overdue tasks only."},
-                    "today": {"type": "boolean", "description": "Set to true to show tasks due today."},
-                    "upcoming": {"type": "boolean", "description": "Set to true to show upcoming tasks."},
-                    "recurring": {"type": "boolean", "description": "Set to true to show recurring tasks."},
+                    "overdue": {
+                        "type": "boolean",
+                        "description": "Set to true to show overdue tasks only.",
+                    },
+                    "today": {
+                        "type": "boolean",
+                        "description": "Set to true to show tasks due today.",
+                    },
+                    "upcoming": {
+                        "type": "boolean",
+                        "description": "Set to true to show upcoming tasks.",
+                    },
+                    "recurring": {
+                        "type": "boolean",
+                        "description": "Set to true to show recurring tasks.",
+                    },
                 },
             },
         },
@@ -201,10 +214,22 @@ TOOL_DEFINITIONS: List[dict] = [
                     },
                     "starts_after": {"type": "string"},
                     "starts_before": {"type": "string"},
-                    "overdue": {"type": "boolean", "description": "Set to true for overdue meetings."},
-                    "missed": {"type": "boolean", "description": "Set to true for missed meetings."},
-                    "today": {"type": "boolean", "description": "Set to true for meetings today."},
-                    "upcoming": {"type": "boolean", "description": "Set to true for upcoming meetings."},
+                    "overdue": {
+                        "type": "boolean",
+                        "description": "Set to true for overdue meetings.",
+                    },
+                    "missed": {
+                        "type": "boolean",
+                        "description": "Set to true for missed meetings.",
+                    },
+                    "today": {
+                        "type": "boolean",
+                        "description": "Set to true for meetings today.",
+                    },
+                    "upcoming": {
+                        "type": "boolean",
+                        "description": "Set to true for upcoming meetings.",
+                    },
                 },
             },
         },
@@ -217,7 +242,10 @@ TOOL_DEFINITIONS: List[dict] = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "meeting_id": {"type": "string", "description": "UUID of the meeting."},
+                    "meeting_id": {
+                        "type": "string",
+                        "description": "UUID of the meeting.",
+                    },
                 },
                 "required": ["meeting_id"],
             },
@@ -268,7 +296,10 @@ TOOL_DEFINITIONS: List[dict] = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "reminder_id": {"type": "string", "description": "UUID of the reminder."},
+                    "reminder_id": {
+                        "type": "string",
+                        "description": "UUID of the reminder.",
+                    },
                 },
                 "required": ["reminder_id"],
             },

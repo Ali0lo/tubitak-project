@@ -6,6 +6,7 @@ fail fast and are swallowed by NotificationClient (see
 app/clients/notification_client.py), which does not affect these
 assertions.
 """
+
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -16,9 +17,7 @@ pytestmark = pytest.mark.asyncio
 
 def _reminder_payload(**overrides) -> dict:
     payload = {
-        "remind_at": (
-            datetime.now(timezone.utc) + timedelta(hours=2)
-        ).isoformat(),
+        "remind_at": (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat(),
         "message": "Don't forget the standup",
     }
     payload.update(overrides)
@@ -44,9 +43,7 @@ async def test_create_reminder_rejects_both_task_and_meeting(
 ) -> None:
     import uuid
 
-    payload = _reminder_payload(
-        task_id=str(uuid.uuid4()), meeting_id=str(uuid.uuid4())
-    )
+    payload = _reminder_payload(task_id=str(uuid.uuid4()), meeting_id=str(uuid.uuid4()))
     response = await client.post(
         "/api/v1/reminders", json=payload, headers=auth_headers
     )

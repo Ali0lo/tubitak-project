@@ -5,6 +5,7 @@ loops that actually send notifications run as a separate process —
 see app/workers/run.py — started with its own command (e.g. a second
 container from the same image).
 """
+
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -23,12 +24,15 @@ settings = get_settings()
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     import asyncio
     import logging
-    import subprocess
+    import subprocess  # nosec B404
 
     logger = logging.getLogger("notification-service.startup")
     try:
+
         def run_alembic():
-            res = subprocess.run(["alembic", "upgrade", "head"], capture_output=True, text=True)
+            res = subprocess.run(  # nosec B603, B607
+                ["alembic", "upgrade", "head"], capture_output=True, text=True
+            )
             if res.returncode != 0:
                 logger.warning(f"Alembic migration warning: {res.stderr}")
             else:

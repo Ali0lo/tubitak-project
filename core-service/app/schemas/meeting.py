@@ -1,4 +1,5 @@
 """Pydantic schemas for meeting resources."""
+
 import uuid
 from datetime import datetime
 from typing import List, Optional
@@ -89,4 +90,3 @@ class MeetingResponse(BaseModel):
 
 class ParticipantResponseUpdate(BaseModel):
     response_status: ParticipantResponseStatus
-

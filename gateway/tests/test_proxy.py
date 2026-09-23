@@ -1,4 +1,5 @@
 """Tests for the gateway's reverse-proxy behavior."""
+
 import httpx
 import pytest
 from httpx import AsyncClient

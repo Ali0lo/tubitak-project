@@ -7,10 +7,11 @@ natural-language request, and this service drives that loop, persists
 every message and tool call for auditability, and returns the final
 assistant reply.
 """
-from datetime import datetime, timedelta, timezone
+
 import json
 import time
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,9 +84,7 @@ class ChatService:
         user_local_time: Optional[str] = None,
         user_timezone: Optional[str] = None,
     ) -> Tuple[Conversation, Message, List[Message]]:
-        conversation = await self._get_or_create_conversation(
-            user_id, conversation_id
-        )
+        conversation = await self._get_or_create_conversation(user_id, conversation_id)
         await self.messages.create(
             conversation_id=conversation.id,
             role=MessageRole.USER,
@@ -101,17 +100,24 @@ class ChatService:
         )
         now_utc = datetime.now(timezone.utc)
         now_local = datetime.now(CHATBOT_TIMEZONE)
-        now_str = f"{now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')} / Local: {now_local.strftime('%Y-%m-%d %H:%M:%S %z (%A)')}"
-        
+        now_str = (
+            f"{now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')} / "
+            f"Local: {now_local.strftime('%Y-%m-%d %H:%M:%S %z (%A)')}"
+        )
+
         timezone_context = (
-            f"User Local Time: {user_local_time} (Timezone: {user_timezone or 'User Local'})."
+            f"User Local Time: {user_local_time} "
+            f"(Timezone: {user_timezone or 'User Local'})."
             if user_local_time
             else f"Current Reference Date and Time: {now_str}."
         )
         system_content = (
             f"{SYSTEM_PROMPT}\n"
             f"{timezone_context}\n"
-            "Use this reference when resolving relative dates like 'today', 'tomorrow', or specific clock times like '9 am'. Calculate timestamps relative to the user's local clock time. Ensure tool call due_date parameter specifies an ISO 8601 string with local timezone offset (e.g. 2026-07-29T09:00:00+03:00)."
+            "Use this reference when resolving relative dates like 'today', 'tomorrow', "
+            "or specific clock times like '9 am'. Calculate timestamps relative to the "
+            "user's local clock time. Ensure tool call due_date parameter specifies "
+            "an ISO 8601 string with local timezone offset (e.g. 2026-07-29T09:00:00+03:00)."
         )
         openai_messages: List[dict] = [
             {"role": "system", "content": system_content}
@@ -144,9 +150,12 @@ class ChatService:
                 openai_messages.append(_message_to_openai_dict(assistant_message))
 
                 for call in result.tool_calls:
-                    tool_result, status, error_message, duration_ms = (
-                        await self._run_tool(call, context)
-                    )
+                    (
+                        tool_result,
+                        status,
+                        error_message,
+                        duration_ms,
+                    ) = await self._run_tool(call, context)
 
                     tool_message = await self.messages.create(
                         conversation_id=conversation.id,
@@ -158,7 +167,9 @@ class ChatService:
                         message_id=assistant_message.id,
                         tool_name=call.name,
                         arguments=call.arguments,
-                        result=tool_result if status == ToolCallStatus.SUCCESS else None,
+                        result=tool_result
+                        if status == ToolCallStatus.SUCCESS
+                        else None,
                         status=status,
                         error_message=error_message,
                         duration_ms=duration_ms,
@@ -206,9 +217,7 @@ class ChatService:
             if conversation is None:
                 raise NotFoundError("Conversation")
             if conversation.user_id != user_id:
-                raise ForbiddenError(
-                    "You do not have access to this conversation"
-                )
+                raise ForbiddenError("You do not have access to this conversation")
             return conversation
 
         conversation = await self.conversations.create(user_id=user_id)

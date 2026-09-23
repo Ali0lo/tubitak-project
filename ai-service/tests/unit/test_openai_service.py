@@ -1,1 +1,1 @@
-""" tests/unit/test_openai_service.py """
+"""tests/unit/test_openai_service.py"""

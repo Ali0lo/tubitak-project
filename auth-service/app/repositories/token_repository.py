@@ -1,4 +1,5 @@
 """Data access layer for RefreshToken and PasswordResetToken models."""
+
 import uuid
 from datetime import datetime
 from typing import Optional

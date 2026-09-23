@@ -1,8 +1,9 @@
 """ToolCallLog ORM model for the ai schema."""
+
 import enum
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy import Enum as SAEnum
@@ -10,6 +11,9 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.message import Message
 
 
 def _utcnow() -> datetime:
@@ -40,17 +44,15 @@ class ToolCallLog(Base):
     arguments: Mapped[dict] = mapped_column(JSONB, nullable=False)
     result: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     status: Mapped[ToolCallStatus] = mapped_column(
-    SAEnum(
-        ToolCallStatus,
-        name="tool_call_status",
-        schema="ai",
-        values_callable=lambda enum_cls: [e.value for e in enum_cls],
-    ),
-    nullable=False,
-)
-    error_message: Mapped[Optional[str]] = mapped_column(
-        String(1024), nullable=True
+        SAEnum(
+            ToolCallStatus,
+            name="tool_call_status",
+            schema="ai",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        nullable=False,
     )
+    error_message: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     duration_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False

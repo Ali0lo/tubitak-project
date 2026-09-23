@@ -3,6 +3,7 @@
 Uses a CoreServiceClient backed by httpx.MockTransport, so these tests
 run with no database and no real network access.
 """
+
 import os
 import uuid
 
@@ -42,9 +43,7 @@ async def test_execute_create_task_returns_core_service_response(
         return httpx.Response(201, json={"id": "task-1", "title": "Buy milk"})
 
     executor = _executor_with_handler(handler)
-    result = await executor.execute(
-        "create_task", {"title": "Buy milk"}, context
-    )
+    result = await executor.execute("create_task", {"title": "Buy milk"}, context)
     assert result == {"id": "task-1", "title": "Buy milk"}
 
 
@@ -52,9 +51,7 @@ async def test_execute_delete_task_returns_status_dict(
     context: ToolContext,
 ) -> None:
     executor = _executor_with_handler(lambda request: httpx.Response(204))
-    result = await executor.execute(
-        "delete_task", {"task_id": "task-1"}, context
-    )
+    result = await executor.execute("delete_task", {"task_id": "task-1"}, context)
     assert result == {"status": "deleted", "task_id": "task-1"}
 
 

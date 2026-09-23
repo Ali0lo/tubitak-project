@@ -1,4 +1,5 @@
 """Reminder API routes."""
+
 import math
 import uuid
 from typing import Optional
@@ -14,9 +15,7 @@ from app.services.reminder_service import ReminderService
 router = APIRouter(prefix="/reminders", tags=["reminders"])
 
 
-@router.post(
-    "", response_model=ReminderResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=ReminderResponse, status_code=status.HTTP_201_CREATED)
 async def create_reminder(
     payload: ReminderCreate,
     user_id: uuid.UUID = Depends(get_current_user_id),
@@ -25,9 +24,7 @@ async def create_reminder(
     try:
         reminder = await reminder_service.create_reminder(user_id, payload)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return ReminderResponse.model_validate(reminder)
 
 
@@ -61,9 +58,7 @@ async def get_reminder(
     try:
         reminder = await reminder_service.get_reminder(user_id, reminder_id)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return ReminderResponse.model_validate(reminder)
 
 
@@ -75,13 +70,9 @@ async def update_reminder(
     reminder_service: ReminderService = Depends(get_reminder_service),
 ) -> ReminderResponse:
     try:
-        reminder = await reminder_service.update_reminder(
-            user_id, reminder_id, payload
-        )
+        reminder = await reminder_service.update_reminder(user_id, reminder_id, payload)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return ReminderResponse.model_validate(reminder)
 
 
@@ -94,6 +85,4 @@ async def delete_reminder(
     try:
         await reminder_service.delete_reminder(user_id, reminder_id)
     except CoreServiceError as exc:
-        raise HTTPException(
-            status_code=exc.status_code, detail=exc.message
-        ) from exc
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc

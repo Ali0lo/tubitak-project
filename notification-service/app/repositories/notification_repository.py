@@ -1,9 +1,10 @@
 """Data access layer for the Notification model."""
+
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
-from sqlalchemy import func, select, update, or_
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.notification import Notification, NotificationStatus
@@ -41,7 +42,13 @@ class NotificationRepository:
             Notification.source != "auth",
             or_(
                 Notification.scheduled_for <= now,
-                Notification.status.in_([NotificationStatus.QUEUED, NotificationStatus.SENT, NotificationStatus.FAILED]),
+                Notification.status.in_(
+                    [
+                        NotificationStatus.QUEUED,
+                        NotificationStatus.SENT,
+                        NotificationStatus.FAILED,
+                    ]
+                ),
             ),
         )
 
@@ -52,23 +59,31 @@ class NotificationRepository:
         total = (await self.db.execute(count_stmt)).scalar_one()
 
         stmt = (
-            stmt.order_by(Notification.scheduled_for.desc())
-            .offset(offset)
-            .limit(limit)
+            stmt.order_by(Notification.scheduled_for.desc()).offset(offset).limit(limit)
         )
         result = await self.db.execute(stmt)
         return list(result.scalars().all()), total
 
     async def get_unread_count(self, user_id: uuid.UUID) -> int:
         now = datetime.now(timezone.utc)
-        stmt = select(func.count()).select_from(Notification).where(
-            Notification.user_id == user_id,
-            Notification.source != "auth",
-            Notification.is_read == False,
-            or_(
-                Notification.scheduled_for <= now,
-                Notification.status.in_([NotificationStatus.QUEUED, NotificationStatus.SENT, NotificationStatus.FAILED]),
-            ),
+        stmt = (
+            select(func.count())
+            .select_from(Notification)
+            .where(
+                Notification.user_id == user_id,
+                Notification.source != "auth",
+                Notification.is_read == False,
+                or_(
+                    Notification.scheduled_for <= now,
+                    Notification.status.in_(
+                        [
+                            NotificationStatus.QUEUED,
+                            NotificationStatus.SENT,
+                            NotificationStatus.FAILED,
+                        ]
+                    ),
+                ),
+            )
         )
         return (await self.db.execute(stmt)).scalar_one()
 
@@ -142,9 +157,7 @@ class NotificationRepository:
         await self.db.refresh(notification)
         return notification
 
-    async def claim_due(
-        self, *, before: datetime, limit: int
-    ) -> List[uuid.UUID]:
+    async def claim_due(self, *, before: datetime, limit: int) -> List[uuid.UUID]:
         """Atomically transition due, pending notifications to QUEUED.
 
         Uses a single UPDATE ... RETURNING so that if multiple
@@ -172,7 +185,9 @@ class NotificationRepository:
         await self.db.commit()
         return ids
 
-    async def mark_sent(self, notification: Notification, sent_at: datetime) -> Notification:
+    async def mark_sent(
+        self, notification: Notification, sent_at: datetime
+    ) -> Notification:
         notification.status = NotificationStatus.SENT
         notification.sent_at = sent_at
         notification.failure_reason = None

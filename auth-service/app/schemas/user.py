@@ -1,4 +1,5 @@
 """Pydantic schemas for user resources."""
+
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -16,9 +17,7 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    full_name: Optional[str] = Field(
-        default=None, min_length=1, max_length=255
-    )
+    full_name: Optional[str] = Field(default=None, min_length=1, max_length=255)
 
 
 class UserResponse(UserBase):

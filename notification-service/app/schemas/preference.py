@@ -1,4 +1,5 @@
 """Pydantic schemas for notification preference resources."""
+
 import uuid
 from datetime import datetime
 

@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config.settings import get_settings
 from app.models.user import User
 from app.repositories.email_verification_repository import (
     EmailVerificationRepository,
 )
 from app.utils.token import TokenUtils
+
+logger = logging.getLogger("auth-service.verification")
 
 
 class EmailVerificationService:
@@ -48,13 +53,7 @@ class EmailVerificationService:
 
         # Send verification token notification via notification-service
         try:
-            import logging
-            import httpx
-            from app.config.settings import get_settings
-
-            logger = logging.getLogger("auth-service.verification")
             settings = get_settings()
-
             async with httpx.AsyncClient(timeout=5.0) as client:
                 await client.post(
                     f"{settings.NOTIFICATION_SERVICE_URL}/api/v1/notifications/schedule",
@@ -68,8 +67,7 @@ class EmailVerificationService:
                     },
                 )
         except Exception as exc:
-            import logging
-            logging.getLogger("auth-service.verification").warning(
+            logger.warning(
                 "Failed to dispatch verification email notification: %s", exc
             )
 

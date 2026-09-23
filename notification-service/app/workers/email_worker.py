@@ -1,4 +1,5 @@
 """Worker process task for consuming and processing email notification dispatch queue."""
+
 import logging
 
 from app.queue.redis_queue import NotificationQueue

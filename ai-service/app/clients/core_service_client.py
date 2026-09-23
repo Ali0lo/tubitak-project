@@ -5,6 +5,7 @@ enforces exactly the same ownership rules it would for a direct API
 call — the agent never has elevated privileges over the user it acts
 for, and never touches the database directly.
 """
+
 from typing import Any, List, Optional
 
 import httpx
@@ -88,9 +89,7 @@ class CoreServiceClient:
             payload["due_date"] = due_date
         if tags is not None:
             payload["tags"] = tags
-        return await self._request(
-            "POST", "/api/v1/tasks", access_token, json=payload
-        )
+        return await self._request("POST", "/api/v1/tasks", access_token, json=payload)
 
     async def list_tasks(
         self,
@@ -121,9 +120,7 @@ class CoreServiceClient:
             params["upcoming"] = upcoming
         if recurring is not None:
             params["recurring"] = recurring
-        return await self._request(
-            "GET", "/api/v1/tasks", access_token, params=params
-        )
+        return await self._request("GET", "/api/v1/tasks", access_token, params=params)
 
     async def bulk_reschedule_overdue_tasks(
         self,
@@ -150,18 +147,14 @@ class CoreServiceClient:
             "POST", "/api/v1/tasks/overdue/complete", access_token, json=payload
         )
 
-    async def update_task(
-        self, access_token: str, task_id: str, **fields: Any
-    ) -> dict:
+    async def update_task(self, access_token: str, task_id: str, **fields: Any) -> dict:
         payload = {k: v for k, v in fields.items() if v is not None}
         return await self._request(
             "PATCH", f"/api/v1/tasks/{task_id}", access_token, json=payload
         )
 
     async def delete_task(self, access_token: str, task_id: str) -> None:
-        await self._request(
-            "DELETE", f"/api/v1/tasks/{task_id}", access_token
-        )
+        await self._request("DELETE", f"/api/v1/tasks/{task_id}", access_token)
 
     # -- Meetings --------------------------------------------------------
 
@@ -260,6 +253,4 @@ class CoreServiceClient:
         )
 
     async def delete_reminder(self, access_token: str, reminder_id: str) -> None:
-        await self._request(
-            "DELETE", f"/api/v1/reminders/{reminder_id}", access_token
-        )
+        await self._request("DELETE", f"/api/v1/reminders/{reminder_id}", access_token)

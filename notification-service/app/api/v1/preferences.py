@@ -1,4 +1,5 @@
 """Notification preference API routes."""
+
 import uuid
 
 from fastapi import APIRouter, Depends

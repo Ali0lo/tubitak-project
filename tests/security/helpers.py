@@ -28,6 +28,7 @@ BASE_ENV = {
     "JWT_SECRET_KEY": "security-test-secret",
     "INTERNAL_SERVICE_API_KEY": "security-test-internal-key",
     "OPENAI_API_KEY": "sk-security-test-not-real",
+    "DEBUG": "false",
 }
 
 DUMMY_UUID = "00000000-0000-0000-0000-000000000000"

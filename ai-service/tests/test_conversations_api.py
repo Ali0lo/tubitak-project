@@ -2,6 +2,7 @@
 
 Requires TEST_DATABASE_URL (see conftest.py).
 """
+
 import uuid
 
 import httpx
@@ -28,9 +29,7 @@ async def _seed_conversation(db_session, user_id: uuid.UUID, text: str = "Hello"
         ),
     )
     service = ChatService(db_session, fake_openai, ToolExecutor(core_client))
-    conversation, _, _ = await service.send_message(
-        user_id, "fake-token", None, text
-    )
+    conversation, _, _ = await service.send_message(user_id, "fake-token", None, text)
     return conversation
 
 
@@ -42,9 +41,7 @@ async def test_list_conversations_requires_auth(app_client: AsyncClient) -> None
 async def test_list_conversations_empty(
     app_client: AsyncClient, auth_headers: dict
 ) -> None:
-    response = await app_client.get(
-        "/api/v1/ai/conversations", headers=auth_headers
-    )
+    response = await app_client.get("/api/v1/ai/conversations", headers=auth_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["items"] == []

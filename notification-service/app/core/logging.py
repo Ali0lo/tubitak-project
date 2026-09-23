@@ -1,1 +1,1 @@
-""" app/core/logging.py """
+"""app/core/logging.py"""

@@ -34,7 +34,9 @@ class NotFoundError(NotificationServiceError):
 class ForbiddenError(NotificationServiceError):
     """Raised when a user attempts to access a notification they don't own."""
 
-    def __init__(self, message: str = "You do not have access to this resource") -> None:
+    def __init__(
+        self, message: str = "You do not have access to this resource"
+    ) -> None:
         super().__init__(message, status_code=403)
 
 

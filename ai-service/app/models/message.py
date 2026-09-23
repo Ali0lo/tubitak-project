@@ -1,8 +1,9 @@
 """Message ORM model for the ai schema."""
+
 import enum
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy import Enum as SAEnum
@@ -10,6 +11,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.conversation import Conversation
+    from app.models.tool_call_log import ToolCallLog
 
 
 def _utcnow() -> datetime:
@@ -45,28 +50,22 @@ class Message(Base):
         index=True,
     )
     role: Mapped[MessageRole] = mapped_column(
-    SAEnum(
-        MessageRole,
-        name="message_role",
-        schema="ai",
-        values_callable=lambda enum_cls: [e.value for e in enum_cls],
-    ),
-    nullable=False,
-)
+        SAEnum(
+            MessageRole,
+            name="message_role",
+            schema="ai",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        nullable=False,
+    )
     content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    tool_calls: Mapped[Optional[List[dict]]] = mapped_column(
-        JSONB, nullable=True
-    )
-    tool_call_id: Mapped[Optional[str]] = mapped_column(
-        String(64), nullable=True
-    )
+    tool_calls: Mapped[Optional[List[dict]]] = mapped_column(JSONB, nullable=True)
+    tool_call_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False, index=True
     )
 
-    conversation: Mapped["Conversation"] = relationship(
-        back_populates="messages"
-    )
+    conversation: Mapped["Conversation"] = relationship(back_populates="messages")
     tool_call_logs: Mapped[List["ToolCallLog"]] = relationship(
         back_populates="message", cascade="all, delete-orphan"
     )

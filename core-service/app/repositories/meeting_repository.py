@@ -1,4 +1,5 @@
 """Data access layer for the Meeting and MeetingParticipant models."""
+
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
@@ -58,11 +59,17 @@ class MeetingRepository:
         if overdue_only or missed_only:
             stmt = stmt.where(
                 Meeting.end_time < current_time,
-                Meeting.status.not_in([MeetingStatus.COMPLETED, MeetingStatus.CANCELLED]),
+                Meeting.status.not_in(
+                    [MeetingStatus.COMPLETED, MeetingStatus.CANCELLED]
+                ),
             )
         elif today_only:
-            start_of_day = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_of_day = current_time.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_of_day = current_time.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            end_of_day = current_time.replace(
+                hour=23, minute=59, second=59, microsecond=999999
+            )
             stmt = stmt.where(
                 Meeting.start_time >= start_of_day,
                 Meeting.start_time <= end_of_day,
@@ -70,7 +77,9 @@ class MeetingRepository:
         elif upcoming_only:
             stmt = stmt.where(
                 Meeting.start_time >= current_time,
-                Meeting.status.not_in([MeetingStatus.COMPLETED, MeetingStatus.CANCELLED]),
+                Meeting.status.not_in(
+                    [MeetingStatus.COMPLETED, MeetingStatus.CANCELLED]
+                ),
             )
 
         count_stmt = select(func.count()).select_from(stmt.subquery())

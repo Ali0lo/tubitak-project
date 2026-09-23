@@ -2,6 +2,7 @@
 
 Requires TEST_DATABASE_URL (see conftest.py).
 """
+
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -16,9 +17,7 @@ def _schedule_payload(**overrides) -> dict:
         "source": "core-service",
         "source_reference_id": str(uuid.uuid4()),
         "user_id": str(uuid.uuid4()),
-        "scheduled_for": (
-            datetime.now(timezone.utc) + timedelta(hours=1)
-        ).isoformat(),
+        "scheduled_for": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
         "message": "Test reminder",
     }
     payload.update(overrides)
@@ -106,9 +105,7 @@ async def test_list_notifications_returns_only_own(
         headers=internal_headers,
     )
 
-    response = await app_client.get(
-        "/api/v1/notifications", headers=auth_headers
-    )
+    response = await app_client.get("/api/v1/notifications", headers=auth_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 1
@@ -133,9 +130,7 @@ async def test_preferences_default_to_email_enabled(
     assert response.json()["email_enabled"] is True
 
 
-async def test_update_preferences(
-    app_client: AsyncClient, auth_headers: dict
-) -> None:
+async def test_update_preferences(app_client: AsyncClient, auth_headers: dict) -> None:
     response = await app_client.patch(
         "/api/v1/notifications/preferences",
         json={"email_enabled": False},

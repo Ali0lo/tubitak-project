@@ -1,1 +1,1 @@
-""" tests/integration/test_notifications_api.py """
+"""tests/integration/test_notifications_api.py"""

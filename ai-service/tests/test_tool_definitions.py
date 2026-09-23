@@ -4,6 +4,7 @@ These run with no database and no network access — they only check
 that the schema handed to OpenAI is well-formed and stays in sync
 with the registered tool handlers.
 """
+
 from app.tools.definitions import TOOL_DEFINITIONS
 from app.tools.executor import TOOL_HANDLERS
 

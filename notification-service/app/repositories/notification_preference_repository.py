@@ -1,4 +1,5 @@
 """Data access layer for the NotificationPreference model."""
+
 import uuid
 from typing import Optional
 

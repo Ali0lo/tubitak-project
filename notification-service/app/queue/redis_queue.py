@@ -6,6 +6,7 @@ each notification as it appears. Using a queue rather than pure DB
 polling in the dispatch worker means dispatch happens immediately
 after the scheduler claims a batch, not on the next poll interval.
 """
+
 import uuid
 from typing import Optional
 
@@ -23,9 +24,7 @@ class NotificationQueue:
     async def enqueue_many(self, notification_ids: list[uuid.UUID]) -> None:
         if not notification_ids:
             return
-        await self.redis.lpush(
-            self.queue_key, *[str(nid) for nid in notification_ids]
-        )
+        await self.redis.lpush(self.queue_key, *[str(nid) for nid in notification_ids])
 
     async def dequeue(self, timeout_seconds: float) -> Optional[uuid.UUID]:
         """Block up to timeout_seconds waiting for an id; None on timeout."""
@@ -34,8 +33,6 @@ class NotificationQueue:
             return None
         _, raw_id = result
         try:
-            return uuid.UUID(
-                raw_id.decode() if isinstance(raw_id, bytes) else raw_id
-            )
+            return uuid.UUID(raw_id.decode() if isinstance(raw_id, bytes) else raw_id)
         except ValueError:
             return None

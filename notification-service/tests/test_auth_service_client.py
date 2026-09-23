@@ -3,6 +3,7 @@
 Uses httpx.MockTransport in place of a real auth-service, so these
 run with no database and no real network access.
 """
+
 import os
 import uuid
 
@@ -22,9 +23,7 @@ pytestmark = pytest.mark.asyncio
 
 def _client_with_handler(handler) -> AuthServiceClient:
     http_client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-    return AuthServiceClient(
-        base_url="http://auth-service:8000", client=http_client
-    )
+    return AuthServiceClient(base_url="http://auth-service:8000", client=http_client)
 
 
 async def test_get_user_email_returns_email_on_success() -> None:

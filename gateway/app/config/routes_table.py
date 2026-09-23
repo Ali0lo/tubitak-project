@@ -4,6 +4,7 @@ The gateway does not know about individual endpoints inside each
 service; it only needs to know which service owns which top-level
 path prefix and forwards everything below that prefix verbatim.
 """
+
 from typing import Dict, Optional, Tuple
 
 from app.config.settings import get_settings
@@ -36,7 +37,6 @@ PUBLIC_PATH_PREFIXES: Tuple[str, ...] = (
     "/api/v1/auth/verify-email",
     "/api/v1/auth/resend-verification",
 )
-
 
 
 def resolve_target(path: str) -> Optional[str]:

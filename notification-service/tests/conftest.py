@@ -6,6 +6,7 @@ test_email_templates.py, test_auth_service_client.py, and
 test_email_client.py do not use this file's fixtures and run without
 any external infrastructure.
 """
+
 import asyncio
 import os
 import uuid
@@ -53,9 +54,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     engine = create_async_engine(os.environ["DATABASE_URL"])
     async with engine.begin() as conn:
         await conn.execute(
-            __import__("sqlalchemy").text(
-                "CREATE SCHEMA IF NOT EXISTS notification"
-            )
+            __import__("sqlalchemy").text("CREATE SCHEMA IF NOT EXISTS notification")
         )
         await conn.run_sync(Base.metadata.create_all)
 

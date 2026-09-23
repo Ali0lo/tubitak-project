@@ -1,10 +1,11 @@
 """Meeting and MeetingParticipant ORM models for the core schema."""
+
 import enum
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, JSON, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -47,26 +48,22 @@ class Meeting(Base):
     start_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, index=True
     )
-    end_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[MeetingStatus] = mapped_column(
-    SAEnum(
-        MeetingStatus,
-        name="meeting_status",
-        schema="core",
-        values_callable=lambda enum_cls: [e.value for e in enum_cls],
-    ),
-    default=MeetingStatus.SCHEDULED,
-    nullable=False,
-    index=True,
-)
+        SAEnum(
+            MeetingStatus,
+            name="meeting_status",
+            schema="core",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        default=MeetingStatus.SCHEDULED,
+        nullable=False,
+        index=True,
+    )
     is_recurring: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, index=True
     )
-    recurrence_rule: Mapped[Optional[dict]] = mapped_column(
-        JSON, nullable=True
-    )
+    recurrence_rule: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     recurrence_parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("core.meetings.id", ondelete="SET NULL"),
@@ -112,15 +109,15 @@ class MeetingParticipant(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     response_status: Mapped[ParticipantResponseStatus] = mapped_column(
-    SAEnum(
-        ParticipantResponseStatus,
-        name="participant_response_status",
-        schema="core",
-        values_callable=lambda enum_cls: [e.value for e in enum_cls],
-    ),
-    default=ParticipantResponseStatus.PENDING,
-    nullable=False,
-)
+        SAEnum(
+            ParticipantResponseStatus,
+            name="participant_response_status",
+            schema="core",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        default=ParticipantResponseStatus.PENDING,
+        nullable=False,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )

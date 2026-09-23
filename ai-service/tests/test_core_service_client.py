@@ -3,6 +3,7 @@
 These use httpx.MockTransport to stand in for core-service, so they
 run with no database and no real network access.
 """
+
 import os
 
 import httpx
@@ -24,9 +25,7 @@ FAKE_TOKEN = "fake-access-token"
 def _client_with_handler(handler) -> CoreServiceClient:
     mock_transport = httpx.MockTransport(handler)
     http_client = httpx.AsyncClient(transport=mock_transport)
-    return CoreServiceClient(
-        base_url="http://core-service:8000", client=http_client
-    )
+    return CoreServiceClient(base_url="http://core-service:8000", client=http_client)
 
 
 async def test_create_task_sends_expected_request() -> None:
