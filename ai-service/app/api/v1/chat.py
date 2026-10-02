@@ -9,12 +9,27 @@ from app.api.deps import (
     get_chat_service,
     get_current_user_id,
 )
+from app.clients.openai_client import OpenAIClient
 from app.core.exceptions import AIServiceError
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.chat import AIConfigResponse, ChatRequest, ChatResponse
 from app.schemas.message import MessageResponse
 from app.services.chat_service import ChatService
 
 router = APIRouter(prefix="/ai", tags=["ai"])
+
+
+@router.get("/config", response_model=AIConfigResponse)
+async def get_ai_config() -> AIConfigResponse:
+    """Inspect active AI model configuration, local LLM status, and tool calling mode."""
+    client = OpenAIClient()
+    return AIConfigResponse(
+        provider=client.provider,
+        model=client.model,
+        is_local=client.is_local,
+        base_url=client.base_url,
+        tool_calling_supported=True,
+        fallback_enabled=client.fallback_to_openai,
+    )
 
 
 @router.post("/chat", response_model=ChatResponse)

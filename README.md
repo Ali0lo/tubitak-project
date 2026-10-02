@@ -82,7 +82,7 @@ Every service owns its database **schema** (`auth`, `core`, `ai`, `notification`
 ## Prerequisites
 
 - Docker and Docker Compose v2
-- An OpenAI API key (for the AI chat assistant)
+- An OpenAI API key **or** a local inference engine ([Ollama](https://ollama.com/) / [vLLM](https://github.com/vllm-project/vllm)) for offline/self-hosted AI assistant
 - (Optional) SMTP credentials for email verification and reminders (e.g. Gmail SMTP)
 
 ---
@@ -92,7 +92,8 @@ Every service owns its database **schema** (`auth`, `core`, `ai`, `notification`
 1. **Configure Environment**:
    ```bash
    cp .env.example .env
-   # Edit .env: set JWT_SECRET_KEY, INTERNAL_SERVICE_API_KEY, OPENAI_API_KEY
+   # Edit .env: set JWT_SECRET_KEY, INTERNAL_SERVICE_API_KEY
+   # Set OPENAI_API_KEY for cloud AI, or LOCAL_LLM_URL for Ollama/vLLM
    ```
 
 2. **Start Services & Auto-Migrate**:
@@ -111,6 +112,32 @@ Every service owns its database **schema** (`auth`, `core`, `ai`, `notification`
    | **notification-service API Docs** | http://localhost:8004/docs |
    | **Grafana** | http://localhost:3001 (`admin` / `GRAFANA_ADMIN_PASSWORD`) |
    | **Prometheus** | http://localhost:9090 |
+
+---
+
+## Running with Local LLMs (Ollama & vLLM)
+
+Todotak's AI assistant supports self-hosted local inference engines for 100% private, offline usage.
+
+### Quick Setup with Ollama
+
+1. Install and run Ollama with a tool-capable model:
+   ```bash
+   ollama pull llama3.1
+   ```
+
+2. In your `.env` file, configure `ai-service` to connect to your local Ollama instance:
+   ```env
+   LLM_PROVIDER=auto
+   LOCAL_LLM_URL=http://host.docker.internal:11434/v1
+   LOCAL_LLM_MODEL=llama3.1
+   LOCAL_LLM_API_KEY=ollama
+   FALLBACK_TO_OPENAI=true
+   ```
+
+3. Start Todotak (`make up`) and verify at `http://localhost:8003/docs` or `GET /api/v1/ai/config`.
+
+> **Note on Tool Calling**: Todotak supports native tool calling on capable models (`llama3.1`, `qwen2.5`, `mistral`) and features automatic graceful degradation to prompt-guided JSON tool calling if the selected local model lacks native function calling support. See [ai-service/README.md](file:///Users/aliiskandarli/Downloads/tubitak-project/ai-service/README.md) for full configuration details.
 
 ---
 

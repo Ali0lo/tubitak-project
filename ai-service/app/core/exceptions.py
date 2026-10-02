@@ -33,13 +33,17 @@ class ForbiddenError(AIServiceError):
         super().__init__(message, status_code=403)
 
 
-class OpenAIRequestError(AIServiceError):
-    """Raised when the OpenAI API call fails or times out."""
+class LLMRequestError(AIServiceError):
+    """Raised when an LLM API call (OpenAI or Local) fails or times out."""
 
     def __init__(
         self, message: str = "The AI assistant is temporarily unavailable"
     ) -> None:
         super().__init__(message, status_code=502)
+
+
+# Backward-compatible alias
+OpenAIRequestError = LLMRequestError
 
 
 class ToolExecutionError(AIServiceError):

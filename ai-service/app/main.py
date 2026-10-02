@@ -45,10 +45,23 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Todotak AI Service",
         description=(
-            "Conversational AI assistant that manages tasks, meetings, "
-            "and reminders via OpenAI tool calling."
+            "Autonomous AI Productivity Agent that manages tasks, meetings, "
+            "and reminders via tool calling.\n\n"
+            "### LLM Engine Support\n"
+            "- **Cloud OpenAI**: Defaults to `gpt-4o` with native tool calling.\n"
+            "- **Local LLM (Ollama & vLLM)**: Fully supports self-hosted local models "
+            "(e.g., `llama3.1`, `qwen2.5`, `mistral`) via OpenAI-compatible endpoints.\n"
+            "- **Graceful Tool Degradation**: Automatically falls back to prompt-guided JSON tool calling "
+            "if the local model does not natively support the OpenAI tools parameter.\n"
+            "- **Fault Tolerance**: Automatic fallback to cloud OpenAI if local LLM is unreachable.\n\n"
+            "### Configuration Options\n"
+            "- `LLM_PROVIDER`: `auto` | `openai` | `local` | `ollama` | `vllm`\n"
+            "- `LOCAL_LLM_URL`: Base URL for local inference (e.g. `http://host.docker.internal:11434/v1`)\n"
+            "- `LOCAL_LLM_MODEL`: Model name (default `llama3.1`)\n"
+            "- `LOCAL_LLM_API_KEY`: Dummy auth header for OpenAI SDK (default `ollama`)\n"
+            "- `FALLBACK_TO_OPENAI`: Boolean (default `true`)"
         ),
-        version="1.0.0",
+        version="1.1.0",
         lifespan=lifespan,
     )
 
@@ -65,8 +78,18 @@ def create_app() -> FastAPI:
     app.include_router(conversations_router, prefix="/api/v1")
 
     @app.get("/health", tags=["health"])
-    async def health_check() -> dict[str, str]:
-        return {"status": "ok", "service": settings.SERVICE_NAME}
+    async def health_check() -> dict:
+        from app.clients.openai_client import OpenAIClient
+
+        client = OpenAIClient()
+        return {
+            "status": "ok",
+            "service": settings.SERVICE_NAME,
+            "llm_provider": client.provider,
+            "llm_model": client.model,
+            "is_local": client.is_local,
+            "base_url": client.base_url,
+        }
 
     return app
 

@@ -122,10 +122,17 @@ services:
       REDIS_URL: redis://redis:6379/2
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      LLM_PROVIDER: ${LLM_PROVIDER:-auto}
+      LOCAL_LLM_URL: ${LOCAL_LLM_URL:-}
+      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-llama3.1}
+      LOCAL_LLM_API_KEY: ${LOCAL_LLM_API_KEY:-ollama}
+      FALLBACK_TO_OPENAI: ${FALLBACK_TO_OPENAI:-true}
       CORE_SERVICE_URL: http://core-service:8000
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
