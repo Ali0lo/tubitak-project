@@ -46,7 +46,7 @@ export function TaskViewSwitcher({ mode, onChange }: TaskViewSwitcherProps) {
         )}
       >
         <Kanban className="h-3.5 w-3.5" />
-        <span>Board</span>
+        <span>Kanban</span>
       </button>
 
       <button

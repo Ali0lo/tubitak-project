@@ -1,10 +1,10 @@
 "use client";
 
-import { Trash2, Repeat, AlertCircle, Clock, Timer } from "lucide-react";
+import { Trash2, Repeat, AlertCircle, Clock, Timer, Video } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { useDeleteTask, useUpdateTask } from "@/hooks/use-tasks";
-import { cn, formatDateLabel, formatTimestamp } from "@/lib/utils";
+import { cn, formatDateLabel, formatTimestamp, extractTaskJoinCallUrl } from "@/lib/utils";
 import type { Task, TaskPriority } from "@/types";
 import { usePomodoroStore } from "@/stores/pomodoro-store";
 import { useTaskDrawerStore } from "@/stores/task-drawer-store";
@@ -107,6 +107,18 @@ export function TaskCard({ task }: TaskCardProps) {
             <Badge tone="neutral" className="flex items-center gap-1 text-[10px]">
               <Clock className="h-3 w-3 text-sky-600" /> Reminder set
             </Badge>
+          ) : null}
+          {extractTaskJoinCallUrl(task) ? (
+            <a
+              href={extractTaskJoinCallUrl(task)!}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full bg-forest/10 text-forest hover:bg-forest hover:text-white dark:bg-forest-light/20 dark:text-forest-light transition-colors"
+            >
+              <Video className="h-3 w-3" />
+              Join Call ↗
+            </a>
           ) : null}
           {task.tags.map((tag) => (
             <Badge key={tag.id} tone="neutral">

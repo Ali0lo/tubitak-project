@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
 import type {
+  BulkTaskStateUpdateInput,
+  BulkTaskStatusUpdateInput,
   PageResponse,
   Task,
   TaskCreateInput,
@@ -53,11 +55,76 @@ export function useUpdateTask() {
       taskId: string;
       input: TaskUpdateInput;
     }) => apiClient.patch<Task>(`/api/v1/tasks/${taskId}`, input),
+    onMutate: async ({ taskId, input }) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      const previousTasksQueries = queryClient.getQueriesData<PageResponse<Task>>({
+        queryKey: ["tasks"],
+      });
+
+      // Optimistically update all task query caches
+      queryClient.setQueriesData<PageResponse<Task>>(
+        { queryKey: ["tasks"] },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            items: oldData.items.map((task) =>
+              task.id === taskId
+                ? {
+                    ...task,
+                    ...input,
+                    completed_at:
+                      input.status === "completed"
+                        ? new Date().toISOString()
+                        : input.status
+                        ? null
+                        : task.completed_at,
+                  }
+                : task
+            ),
+          };
+        }
+      );
+
+      return { previousTasksQueries };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousTasksQueries) {
+        for (const [queryKey, data] of context.previousTasksQueries) {
+          queryClient.setQueryData(queryKey, data);
+        }
+      }
+    },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       if (variables.input.status === "completed") {
         triggerTaskCompletionEffect();
       }
+    },
+  });
+}
+
+export function useBulkUpdateTaskStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BulkTaskStatusUpdateInput) =>
+      apiClient.post<Task[]>("/api/v1/tasks/bulk-status", input),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      if (variables.status === "completed") {
+        triggerTaskCompletionEffect();
+      }
+    },
+  });
+}
+
+export function useBulkUpdateTaskState() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BulkTaskStateUpdateInput) =>
+      apiClient.post<Task[]>("/api/v1/tasks/bulk-state", input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }

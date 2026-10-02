@@ -67,3 +67,19 @@ export function extractMeetingUrl(meeting: {
   return null;
 }
 
+/** Extracts a Join Call URL from task description or title if present. */
+export function extractTaskJoinCallUrl(task: {
+  description?: string | null;
+  title?: string | null;
+}): string | null {
+  const sources = [task.description, task.title];
+  for (const src of sources) {
+    if (!src) continue;
+    const match = src.match(/https?:\/\/[^\s"'<>\)]+/i);
+    if (match) {
+      return match[0];
+    }
+  }
+  return null;
+}
+

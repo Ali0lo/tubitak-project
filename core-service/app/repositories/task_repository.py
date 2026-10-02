@@ -140,6 +140,7 @@ class TaskRepository:
         status: Optional[TaskStatus] = None,
         priority: Optional[TaskPriority] = None,
         due_date: Optional[datetime] = None,
+        board_order: Optional[int] = None,
         completed_at: Optional[datetime] = None,
         clear_completed_at: bool = False,
         is_recurring: Optional[bool] = None,
@@ -155,6 +156,8 @@ class TaskRepository:
             task.priority = priority
         if due_date is not None:
             task.due_date = due_date
+        if board_order is not None:
+            task.board_order = board_order
         if clear_completed_at:
             task.completed_at = None
         elif completed_at is not None:

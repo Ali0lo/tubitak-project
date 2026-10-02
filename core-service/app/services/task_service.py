@@ -16,7 +16,7 @@ from app.models.task_comment import TaskComment
 from app.repositories.task_repository import TaskRepository
 from app.schemas.reminder import ReminderCreate
 from app.schemas.subtask import SubtaskCreate, SubtaskUpdate
-from app.schemas.task import TaskCreate, TaskUpdate
+from app.schemas.task import TaskCreate, TaskStateUpdateItem, TaskUpdate
 from app.schemas.task_comment import TaskCommentCreate
 from app.services.reminder_service import ReminderService
 
@@ -252,6 +252,7 @@ class TaskService:
             status=payload.status,
             priority=payload.priority,
             due_date=payload.due_date,
+            board_order=payload.board_order,
             completed_at=completed_at,
             clear_completed_at=clear_completed_at,
             is_recurring=payload.is_recurring,
@@ -506,6 +507,81 @@ class TaskService:
         await self.db.commit()
         await self.db.refresh(comment)
         return comment
+
+    async def bulk_update_status(
+        self,
+        user_id: uuid.UUID,
+        task_ids: List[uuid.UUID],
+        status: TaskStatus,
+    ) -> List[Task]:
+        """Bulk update the status of multiple tasks belonging to the user."""
+        updated_tasks: List[Task] = []
+        now = datetime.now(timezone.utc)
+        for tid in task_ids:
+            try:
+                task = await self.get_task(user_id, tid)
+            except (NotFoundError, ForbiddenError):
+                continue
+
+            completed_at = now if status == TaskStatus.COMPLETED and task.status != TaskStatus.COMPLETED else None
+            clear_completed_at = status != TaskStatus.COMPLETED
+
+            updated = await self.tasks.update(
+                task,
+                status=status,
+                completed_at=completed_at,
+                clear_completed_at=clear_completed_at,
+            )
+            await self.log_activity(
+                tid,
+                user_id,
+                "status_updated",
+                f"Status updated to {status.value} via bulk action",
+            )
+            updated_tasks.append(updated)
+
+        await self.db.commit()
+        return updated_tasks
+
+    async def bulk_update_state(
+        self,
+        user_id: uuid.UUID,
+        updates: List[TaskStateUpdateItem],
+    ) -> List[Task]:
+        """Bulk update task states (status and/or board order) for Kanban board."""
+        updated_tasks: List[Task] = []
+        now = datetime.now(timezone.utc)
+        for item in updates:
+            try:
+                task = await self.get_task(user_id, item.task_id)
+            except (NotFoundError, ForbiddenError):
+                continue
+
+            completed_at = None
+            clear_completed_at = False
+            if item.status == TaskStatus.COMPLETED and task.status != TaskStatus.COMPLETED:
+                completed_at = now
+            elif item.status is not None and item.status != TaskStatus.COMPLETED:
+                clear_completed_at = True
+
+            updated = await self.tasks.update(
+                task,
+                status=item.status,
+                board_order=item.board_order,
+                completed_at=completed_at,
+                clear_completed_at=clear_completed_at,
+            )
+            if item.status is not None and item.status != task.status:
+                await self.log_activity(
+                    item.task_id,
+                    user_id,
+                    "status_updated",
+                    f"Moved to {item.status.value} on Kanban board",
+                )
+            updated_tasks.append(updated)
+
+        await self.db.commit()
+        return updated_tasks
 
     @staticmethod
     def _assert_owner(task: Task, user_id: uuid.UUID) -> None:

@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,6 +25,7 @@ def _utcnow() -> datetime:
 class TaskStatus(str, enum.Enum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
+    REVIEW = "review"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
@@ -60,6 +61,9 @@ class Task(Base):
         default=TaskStatus.PENDING,
         nullable=False,
         index=True,
+    )
+    board_order: Mapped[int] = mapped_column(
+        Integer, server_default=text("0"), default=0, nullable=False, index=True
     )
     priority: Mapped[TaskPriority] = mapped_column(
         SAEnum(
