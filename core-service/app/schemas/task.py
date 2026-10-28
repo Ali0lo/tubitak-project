@@ -67,7 +67,6 @@ class TaskUpdate(BaseModel):
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
     due_date: Optional[datetime] = None
-    board_order: Optional[int] = None
     is_recurring: Optional[bool] = None
     recurrence_rule: Optional[RecurrenceRule] = None
     recurrence_scope: Optional[str] = "this_only"  # "this_only", "future", "all"
@@ -81,7 +80,6 @@ class TaskResponse(BaseModel):
     description: Optional[str]
     status: TaskStatus
     priority: TaskPriority
-    board_order: int = 0
     due_date: Optional[datetime]
     completed_at: Optional[datetime]
     is_recurring: bool = False
@@ -108,21 +106,6 @@ class BulkRescheduleRequest(BaseModel):
 
 class BulkCompleteRequest(BaseModel):
     task_ids: Optional[List[uuid.UUID]] = None
-
-
-class TaskStateUpdateItem(BaseModel):
-    task_id: uuid.UUID
-    status: Optional[TaskStatus] = None
-    board_order: Optional[int] = None
-
-
-class BulkTaskStateUpdateRequest(BaseModel):
-    updates: List[TaskStateUpdateItem]
-
-
-class BulkStatusUpdateRequest(BaseModel):
-    task_ids: List[uuid.UUID]
-    status: TaskStatus
 
 
 class TaskFilterParams(BaseModel):

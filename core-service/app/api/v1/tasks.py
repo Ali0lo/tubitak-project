@@ -20,8 +20,6 @@ from app.schemas.subtask import (
 from app.schemas.task import (
     BulkCompleteRequest,
     BulkRescheduleRequest,
-    BulkStatusUpdateRequest,
-    BulkTaskStateUpdateRequest,
     TaskCreate,
     TaskResponse,
     TaskUpdate,
@@ -156,48 +154,6 @@ async def bulk_complete_overdue_tasks(
     except CoreServiceError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return [serialize_task(t) for t in completed]
-
-
-@router.post("/bulk-status", response_model=List[TaskResponse])
-async def bulk_update_task_status(
-    payload: BulkStatusUpdateRequest,
-    user_id: uuid.UUID = Depends(get_current_user_id),
-    task_service: TaskService = Depends(get_task_service),
-) -> List[TaskResponse]:
-    """Bulk update the status for multiple tasks belonging to the user."""
-    try:
-        updated = await task_service.bulk_update_status(
-            user_id, payload.task_ids, payload.status
-        )
-    except CoreServiceError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
-    return [serialize_task(t) for t in updated]
-
-
-@router.post("/bulk-state", response_model=List[TaskResponse])
-async def bulk_update_task_state(
-    payload: BulkTaskStateUpdateRequest,
-    user_id: uuid.UUID = Depends(get_current_user_id),
-    task_service: TaskService = Depends(get_task_service),
-) -> List[TaskResponse]:
-    """Bulk update task states (status and/or board order) for Kanban board."""
-    try:
-        updated = await task_service.bulk_update_state(
-            user_id, payload.updates
-        )
-    except CoreServiceError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
-    return [serialize_task(t) for t in updated]
-
-
-@router.post("/board-order", response_model=List[TaskResponse])
-async def update_task_board_order(
-    payload: BulkTaskStateUpdateRequest,
-    user_id: uuid.UUID = Depends(get_current_user_id),
-    task_service: TaskService = Depends(get_task_service),
-) -> List[TaskResponse]:
-    """Reorder and update task states across Kanban columns."""
-    return await bulk_update_task_state(payload, user_id, task_service)
 
 
 @router.get("/{task_id}", response_model=TaskResponse)

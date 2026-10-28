@@ -56,7 +56,7 @@ TOOL_DEFINITIONS: List[dict] = [
                 "properties": {
                     "status": {
                         "type": "string",
-                        "enum": ["pending", "in_progress", "review", "completed", "cancelled"],
+                        "enum": ["pending", "in_progress", "completed", "cancelled"],
                     },
                     "priority": {
                         "type": "string",
@@ -139,7 +139,7 @@ TOOL_DEFINITIONS: List[dict] = [
                     "description": {"type": "string"},
                     "status": {
                         "type": "string",
-                        "enum": ["pending", "in_progress", "review", "completed", "cancelled"],
+                        "enum": ["pending", "in_progress", "completed", "cancelled"],
                     },
                     "priority": {
                         "type": "string",

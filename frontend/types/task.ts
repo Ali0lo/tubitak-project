@@ -1,4 +1,4 @@
-export type TaskStatus = "pending" | "in_progress" | "review" | "completed" | "cancelled";
+export type TaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
 export interface TaskTag {
@@ -22,6 +22,11 @@ export interface RecurrenceRule {
   unit?: string;
 }
 
+export interface TaskTag {
+  id: string;
+  name: string;
+}
+
 export interface Task {
   id: string;
   user_id: string;
@@ -29,7 +34,6 @@ export interface Task {
   description: string | null;
   status: TaskStatus;
   priority: TaskPriority;
-  board_order?: number;
   due_date: string | null;
   completed_at: string | null;
   is_recurring: boolean;
@@ -65,25 +69,9 @@ export interface TaskUpdateInput {
   status?: TaskStatus;
   priority?: TaskPriority;
   due_date?: string;
-  board_order?: number;
   is_recurring?: boolean;
   recurrence_rule?: RecurrenceRule;
   recurrence_scope?: "this_only" | "future" | "all";
-}
-
-export interface TaskStateUpdateItem {
-  task_id: string;
-  status?: TaskStatus;
-  board_order?: number;
-}
-
-export interface BulkTaskStateUpdateInput {
-  updates: TaskStateUpdateItem[];
-}
-
-export interface BulkTaskStatusUpdateInput {
-  task_ids: string[];
-  status: TaskStatus;
 }
 
 export interface TaskFilters {

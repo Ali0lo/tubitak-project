@@ -81,6 +81,8 @@ class Block(Base):
     parent = relationship("Block", remote_side=[id], back_populates="children")
     children = relationship(
         "Block",
+        backref="parent_block",
+        remote_side=[id],
         back_populates="parent",
         cascade="all, delete-orphan",
         order_by="Block.sort_order",

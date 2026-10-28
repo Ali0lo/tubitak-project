@@ -58,6 +58,8 @@ class Page(Base):
     parent = relationship("Page", remote_side=[id], back_populates="children")
     children = relationship(
         "Page",
+        backref="parent",
+        remote_side=[id],
         back_populates="parent",
         cascade="all, delete-orphan",
         order_by="Page.sort_order",
