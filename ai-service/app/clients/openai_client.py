@@ -98,11 +98,7 @@ class OpenAIClient:
             if fallback_to_openai is not None
             else settings.FALLBACK_TO_OPENAI
         )
-        if (
-            self.is_local
-            and self.fallback_to_openai
-            and bool(settings.OPENAI_API_KEY)
-        ):
+        if self.is_local and self.fallback_to_openai and bool(settings.OPENAI_API_KEY):
             self._fallback_client: Optional[AsyncOpenAI] = AsyncOpenAI(
                 api_key=settings.OPENAI_API_KEY
             )
@@ -276,9 +272,7 @@ class OpenAIClient:
                 data = json.loads(cand)
                 if isinstance(data, dict):
                     tool_name = (
-                        data.get("name")
-                        or data.get("tool")
-                        or data.get("function")
+                        data.get("name") or data.get("tool") or data.get("function")
                     )
                     if tool_name and isinstance(tool_name, str):
                         args = data.get("arguments") or data.get("parameters")
@@ -302,8 +296,8 @@ class OpenAIClient:
                             name=tool_name,
                             arguments=args,
                         )
-            except Exception:
-                continue
+            except (json.JSONDecodeError, TypeError, ValueError):
+                pass
 
         return None
 

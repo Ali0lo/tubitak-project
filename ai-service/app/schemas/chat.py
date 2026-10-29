@@ -22,9 +22,15 @@ class ChatResponse(BaseModel):
 
 
 class AIConfigResponse(BaseModel):
-    provider: str = Field(description="Active LLM provider (openai, ollama, vllm, local)")
+    provider: str = Field(
+        description="Active LLM provider (openai, ollama, vllm, local)"
+    )
     model: str = Field(description="Configured active model name")
     is_local: bool = Field(description="Whether a local inference engine is being used")
-    base_url: Optional[str] = Field(None, description="Base API URL for the model provider")
-    tool_calling_supported: bool = Field(description="Whether tool calling is enabled/supported")
+    base_url: Optional[str] = Field(
+        None, description="Base API URL for the model provider"
+    )
+    tool_calling_supported: bool = Field(
+        description="Whether tool calling is enabled/supported"
+    )
     fallback_enabled: bool = Field(description="Whether fallback to OpenAI is enabled")

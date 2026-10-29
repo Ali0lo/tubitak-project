@@ -94,16 +94,30 @@ def test_provider_resolution_forced_openai():
 
 def test_local_llm_url_normalization_in_settings():
     """Settings validator should normalize URLs missing /v1 and strip trailing slashes."""
-    s1 = Settings(DATABASE_URL="sqlite+aiosqlite://", JWT_SECRET_KEY="x", LOCAL_LLM_URL="http://localhost:11434")
+    s1 = Settings(
+        DATABASE_URL="sqlite+aiosqlite://",
+        JWT_SECRET_KEY="x",
+        LOCAL_LLM_URL="http://localhost:11434",
+    )
     assert s1.LOCAL_LLM_URL == "http://localhost:11434/v1"
 
-    s2 = Settings(DATABASE_URL="sqlite+aiosqlite://", JWT_SECRET_KEY="x", LOCAL_LLM_URL="http://localhost:11434/")
+    s2 = Settings(
+        DATABASE_URL="sqlite+aiosqlite://",
+        JWT_SECRET_KEY="x",
+        LOCAL_LLM_URL="http://localhost:11434/",
+    )
     assert s2.LOCAL_LLM_URL == "http://localhost:11434/v1"
 
-    s3 = Settings(DATABASE_URL="sqlite+aiosqlite://", JWT_SECRET_KEY="x", LOCAL_LLM_URL="http://host:8000/v1/")
+    s3 = Settings(
+        DATABASE_URL="sqlite+aiosqlite://",
+        JWT_SECRET_KEY="x",
+        LOCAL_LLM_URL="http://host:8000/v1/",
+    )
     assert s3.LOCAL_LLM_URL == "http://host:8000/v1"
 
-    s4 = Settings(DATABASE_URL="sqlite+aiosqlite://", JWT_SECRET_KEY="x", LOCAL_LLM_URL="")
+    s4 = Settings(
+        DATABASE_URL="sqlite+aiosqlite://", JWT_SECRET_KEY="x", LOCAL_LLM_URL=""
+    )
     assert s4.LOCAL_LLM_URL is None
 
 
@@ -120,7 +134,9 @@ async def test_native_tool_calling_success():
     mock_tool_call = MagicMock()
     mock_tool_call.id = "call_abc123"
     mock_tool_call.function.name = "create_task"
-    mock_tool_call.function.arguments = '{"title": "Schedule team sync", "priority": "high"}'
+    mock_tool_call.function.arguments = (
+        '{"title": "Schedule team sync", "priority": "high"}'
+    )
 
     mock_choice = MagicMock()
     mock_choice.message.content = None
@@ -132,12 +148,22 @@ async def test_native_tool_calling_success():
 
     client._client.chat.completions.create = AsyncMock(return_value=mock_response)
 
-    tools = [{"type": "function", "function": {"name": "create_task", "description": "Create a task"}}]
-    result = await client.complete(messages=[{"role": "user", "content": "Schedule sync"}], tools=tools)
+    tools = [
+        {
+            "type": "function",
+            "function": {"name": "create_task", "description": "Create a task"},
+        }
+    ]
+    result = await client.complete(
+        messages=[{"role": "user", "content": "Schedule sync"}], tools=tools
+    )
 
     assert len(result.tool_calls) == 1
     assert result.tool_calls[0].name == "create_task"
-    assert result.tool_calls[0].arguments == {"title": "Schedule team sync", "priority": "high"}
+    assert result.tool_calls[0].arguments == {
+        "title": "Schedule team sync",
+        "priority": "high",
+    }
     assert result.finish_reason == "tool_calls"
 
 
@@ -163,9 +189,9 @@ async def test_graceful_tool_degradation_when_tools_unsupported():
     # Fallback call without tools succeeds, returning JSON formatted tool call
     mock_choice = MagicMock()
     mock_choice.message.content = (
-        'Here is your task request:\n```json\n'
+        "Here is your task request:\n```json\n"
         '{"name": "create_task", "arguments": {"title": "Call doctor tomorrow"}}\n'
-        '```'
+        "```"
     )
     mock_choice.message.tool_calls = None
     mock_choice.finish_reason = "stop"
@@ -177,16 +203,24 @@ async def test_graceful_tool_degradation_when_tools_unsupported():
         side_effect=[bad_request_err, mock_fallback_response]
     )
 
-    tools = [{
-        "type": "function",
-        "function": {
-            "name": "create_task",
-            "description": "Create a task",
-            "parameters": {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"]},
-        },
-    }]
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "create_task",
+                "description": "Create a task",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"title": {"type": "string"}},
+                    "required": ["title"],
+                },
+            },
+        }
+    ]
 
-    result = await client.complete(messages=[{"role": "user", "content": "Call doctor"}], tools=tools)
+    result = await client.complete(
+        messages=[{"role": "user", "content": "Call doctor"}], tools=tools
+    )
 
     assert client._client.chat.completions.create.call_count == 2
     # Verify fallback call did NOT include tools kwarg
@@ -225,8 +259,15 @@ async def test_graceful_tool_degradation_conversational_response():
         side_effect=[bad_request_err, mock_response]
     )
 
-    tools = [{"type": "function", "function": {"name": "create_task", "description": "Create a task"}}]
-    result = await client.complete(messages=[{"role": "user", "content": "Hello"}], tools=tools)
+    tools = [
+        {
+            "type": "function",
+            "function": {"name": "create_task", "description": "Create a task"},
+        }
+    ]
+    result = await client.complete(
+        messages=[{"role": "user", "content": "Hello"}], tools=tools
+    )
 
     assert len(result.tool_calls) == 0
     assert result.content == "Hello! I can help you manage tasks and meetings."
@@ -260,7 +301,9 @@ async def test_fault_tolerant_cloud_fallback_on_local_connection_failure():
         fallback_response = MagicMock()
         fallback_response.choices = [fallback_choice]
 
-        client._fallback_client.chat.completions.create = AsyncMock(return_value=fallback_response)
+        client._fallback_client.chat.completions.create = AsyncMock(
+            return_value=fallback_response
+        )
 
         result = await client.complete(messages=[{"role": "user", "content": "Hi"}])
         assert result.content == "Cloud fallback response"
