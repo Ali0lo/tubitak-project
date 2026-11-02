@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPO_DIR="/Users/aliiskandarli/Downloads/tubitak-project"
 SCRIPT_PATH="$REPO_DIR/scripts/daily_commit.sh"
-LOG_FILE="$REPO_DIR/.git/daily_commit.log"
+LOG_FILE="/tmp/tubitak_daily_commit.log"
 STAMP_FILE="$HOME/.tubitak_last_commit_date"
 ZSHRC_FILE="$HOME/.zshrc"
 MARKER_START="# >>> tubitak-daily-commit >>>"
@@ -19,25 +19,31 @@ ACTION="${1:-status}"
 case "$ACTION" in
     status)
         TODAY="$(date '+%Y-%m-%d')"
-        LAST_DATE="$(git -C "$REPO_DIR" log -1 --format='%ad' --date=short 2>/dev/null || echo 'none')"
-        LAST_COMMIT="$(git -C "$REPO_DIR" log -1 --oneline 2>/dev/null || echo 'none')"
+        ALL_DATES="$(git -C "$REPO_DIR" log -n 100 --format='%ad' --date=short 2>/dev/null || true)"
+        LAST_DATE="$(echo "$ALL_DATES" | sort -u -r | head -n 1 || echo 'none')"
+        LATEST_COMMIT="$(git -C "$REPO_DIR" log -1 --oneline 2>/dev/null || echo 'none')"
 
         echo "========================================================"
         echo "  Daily Single-Commit System Status"
         echo "========================================================"
-        echo "  Today's Date      : $TODAY"
-        echo "  Last Commit Date  : $LAST_DATE"
-        echo "  Latest Commit     : $LAST_COMMIT"
-        if [ "$LAST_DATE" = "$TODAY" ]; then
-            echo "  Today's Quota     : [COMPLETED] (1/1 commit made today)"
+        echo "  Today's Date       : $TODAY"
+        echo "  Latest Active Date : $LAST_DATE"
+        echo "  Latest Commit      : $LATEST_COMMIT"
+        if echo "$ALL_DATES" | grep "^${TODAY}$" >/dev/null; then
+            echo "  Today's Quota      : [COMPLETED] (Commit for $TODAY exists)"
         else
-            echo "  Today's Quota     : [PENDING]   (0/1 commit made today)"
+            echo "  Today's Quota      : [PENDING]   (Commit for $TODAY pending)"
         fi
 
+        echo "--------------------------------------------------------"
+        echo "  Recent Consecutive Contribution Days (Last 7 Days):"
+        echo "$ALL_DATES" | sort -u -r | head -n 7 | sed 's/^/    ✓ /'
+
+        echo "--------------------------------------------------------"
         if grep -q "$MARKER_START" "$ZSHRC_FILE" 2>/dev/null; then
-            echo "  Auto-Trigger Hook : ACTIVE (in ~/.zshrc + Antigravity Cron)"
+            echo "  Auto-Trigger Hook  : ACTIVE (in ~/.zshrc)"
         else
-            echo "  Auto-Trigger Hook : NOT INSTALLED"
+            echo "  Auto-Trigger Hook  : NOT INSTALLED"
         fi
         echo "========================================================"
         ;;
@@ -47,13 +53,6 @@ case "$ACTION" in
         ;;
 
     install)
-        # Remove old launchd plist if present (macOS TCC blocks background agents on ~/Downloads)
-        OLD_PLIST="$HOME/Library/LaunchAgents/com.ali0lo.tubitak.dailycommit.plist"
-        if [ -f "$OLD_PLIST" ]; then
-            launchctl unload "$OLD_PLIST" 2>/dev/null || true
-            rm -f "$OLD_PLIST"
-        fi
-
         touch "$ZSHRC_FILE"
         if ! grep -q "$MARKER_START" "$ZSHRC_FILE" 2>/dev/null; then
             cat << EOF >> "$ZSHRC_FILE"
